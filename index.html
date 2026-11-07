@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>טאץ' ווד – הצעות מחיר</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Heebo', sans-serif; background: #f1f5f9; color: #1e293b; min-height: 100vh; }
+
+/* LAYOUT */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+header { background: #1a3a2a; color: white; padding: 0 24px; height: 64px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,.3); }
+.header-logo { display: flex; align-items: center; gap: 14px; }
+.header-logo img { height: 42px; object-fit: contain; filter: brightness(0) invert(1); }
+.header-logo h1 { font-size: 18px; font-weight: 700; letter-spacing: .5px; color: #d4af6a; }
+.main { flex: 1; padding: 28px 32px; max-width: 1280px; margin: 0 auto; width: 100%; }
+
+/* BUTTONS */
+.btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 500; transition: all .15s; white-space: nowrap; }
+.btn-primary { background: #1a3a2a; color: white; }
+.btn-primary:hover { background: #0f2318; }
+.btn-gold { background: #d4af6a; color: #1a3a2a; font-weight: 700; }
+.btn-gold:hover { background: #c09a55; }
+.btn-outline { background: white; border: 1.5px solid #cbd5e1; color: #475569; }
+.btn-outline:hover { border-color: #94a3b8; background: #f8fafc; }
+.btn-danger { background: #ef4444; color: white; }
+.btn-danger:hover { background: #dc2626; }
+.btn-success { background: #16a34a; color: white; }
+.btn-success:hover { background: #15803d; }
+.btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn-icon { padding: 6px 10px; }
+
+/* SCREENS */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* CARDS */
+.card { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.07); padding: 22px 24px; margin-bottom: 16px; }
+.card-title { font-size: 15px; font-weight: 700; color: #1a3a2a; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 2px solid #d4af6a; display: flex; align-items: center; gap: 8px; }
+
+/* QUOTES LIST */
+.list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.list-header h2 { font-size: 22px; font-weight: 700; color: #1a3a2a; }
+.list-stats { display: flex; gap: 12px; margin-bottom: 20px; }
+.stat-card { background: white; border-radius: 10px; padding: 14px 20px; flex: 1; box-shadow: 0 1px 4px rgba(0,0,0,.07); border-right: 4px solid #d4af6a; }
+.stat-card .num { font-size: 26px; font-weight: 700; color: #1a3a2a; }
+.stat-card .lbl { font-size: 12px; color: #64748b; margin-top: 2px; }
+.quotes-table-wrap { background: white; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.07); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; }
+th { background: #1a3a2a; color: #d4af6a; font-size: 13px; font-weight: 600; padding: 12px 16px; text-align: right; }
+td { padding: 13px 16px; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #f8faf9; }
+.empty-state { text-align: center; padding: 70px 20px; color: #94a3b8; }
+.empty-state .icon { font-size: 56px; margin-bottom: 12px; }
+.empty-state p { font-size: 15px; }
+
+/* BADGES */
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.badge-draft { background: #e2e8f0; color: #475569; }
+.badge-sent { background: #dbeafe; color: #1d4ed8; }
+.badge-approved { background: #dcfce7; color: #15803d; }
+.badge-cancelled { background: #fee2e2; color: #b91c1c; }
+.badge-order { background: #fef3c7; color: #92400e; border: 1px solid #d4af6a; }
+
+/* TABS */
+.tabs { display: flex; gap: 4px; background: #e2e8f0; border-radius: 10px; padding: 4px; margin-bottom: 20px; width: fit-content; }
+.tab { padding: 7px 18px; border-radius: 7px; border: none; font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; color: #64748b; background: transparent; transition: all .15s; }
+.tab.active { background: #1a3a2a; color: #d4af6a; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+
+/* FORM */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+label { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .4px; }
+input[type=text], input[type=date], input[type=number], input[type=tel], input[type=email], select, textarea {
+  font-family: inherit; font-size: 14px; padding: 9px 12px; border: 1.5px solid #e2e8f0; border-radius: 8px; color: #1e293b; transition: border .15s; width: 100%; background: white;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: #1a3a2a; box-shadow: 0 0 0 3px rgba(26,58,42,.1); }
+textarea { resize: vertical; min-height: 80px; }
+
+/* ITEMS TABLE */
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th { background: #f8fafc; color: #64748b; font-size: 12px; font-weight: 700; padding: 9px 8px; text-align: right; border-bottom: 2px solid #e2e8f0; text-transform: uppercase; letter-spacing: .3px; }
+.items-table td { padding: 5px 4px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+.items-table input { border: 1.5px solid #e2e8f0; border-radius: 6px; padding: 7px 8px; font-size: 14px; width: 100%; }
+.items-table input:focus { border-color: #1a3a2a; outline: none; box-shadow: 0 0 0 2px rgba(26,58,42,.08); }
+.col-idx { width: 36px; text-align: center !important; color: #94a3b8; font-size: 13px; }
+.col-title { min-width: 130px; }
+.col-detail { min-width: 240px; }
+.col-area { width: 100px; }
+.col-price { width: 110px; }
+.col-total { width: 110px; }
+.col-action { width: 44px; text-align: center !important; }
+.row-total { background: #f0fdf4; font-weight: 600; color: #1a3a2a; padding: 7px 8px; border-radius: 6px; text-align: left; display: block; direction: ltr; }
+
+/* TOTALS */
+.totals-section { display: flex; justify-content: flex-start; }
+.totals-box { background: #f8fafc; border-radius: 10px; padding: 16px 20px; min-width: 300px; border: 1px solid #e2e8f0; }
+.totals-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; font-size: 14px; gap: 40px; }
+.totals-row.divider { border-top: 1px solid #e2e8f0; margin-top: 4px; padding-top: 12px; }
+.totals-row.grand { font-size: 18px; font-weight: 700; color: #1a3a2a; }
+.totals-label { color: #64748b; }
+.discount-inline { display: inline-flex; align-items: center; gap: 6px; margin-right: 8px; }
+.discount-inline input { width: 80px !important; }
+.discount-inline select { width: 65px !important; }
+
+/* REMARKS */
+.remarks-list { display: flex; flex-direction: column; gap: 6px; }
+.remark-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: #475569; }
+.remark-item::before { content: '•'; color: #d4af6a; font-size: 16px; flex-shrink: 0; margin-top: -1px; }
+.remark-item.editable { cursor: pointer; }
+
+/* TIMELINE */
+.timeline-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.timeline-item { display: flex; flex-direction: column; gap: 4px; }
+.timeline-item label { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; }
+
+/* FORM ACTIONS */
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+
+/* PREVIEW */
+.preview-actions { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+.preview-actions h2 { font-size: 20px; font-weight: 700; flex: 1; color: #1a3a2a; }
+
+/* QUOTE DOCUMENT */
+#quote-doc { background: white; padding: 36px 44px; max-width: 860px; margin: 0 auto; border-radius: 12px; box-shadow: 0 1px 6px rgba(0,0,0,.1); }
+.doc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 3px solid #1a3a2a; }
+.doc-company-info { font-size: 12px; color: #475569; line-height: 1.9; text-align: left; }
+.doc-logo { max-height: 72px; max-width: 160px; object-fit: contain; }
+.doc-title-section { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.doc-title-section h2 { font-size: 24px; font-weight: 700; color: #1a3a2a; }
+.doc-meta-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 16px; }
+.doc-meta-row { display: flex; gap: 6px; font-size: 13px; }
+.doc-meta-label { color: #64748b; font-weight: 600; }
+.doc-client-section { background: #f8fafc; border-radius: 8px; padding: 12px 16px; margin-bottom: 18px; display: grid; grid-template-columns: auto 1fr; gap: 4px 16px; }
+.doc-client-label { font-size: 12px; color: #64748b; font-weight: 700; }
+.doc-client-val { font-size: 13px; color: #1e293b; }
+.doc-items-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 13px; }
+.doc-items-table th { background: #1a3a2a; color: #d4af6a; padding: 9px 10px; text-align: right; font-weight: 600; font-size: 12px; }
+.doc-items-table td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+.doc-items-table tr:nth-child(even) td { background: #f8faf9; }
+.doc-items-table .num { text-align: left; direction: ltr; white-space: nowrap; }
+.doc-bottom { display: flex; gap: 24px; margin-bottom: 18px; }
+.doc-totals-wrap { flex: 1; }
+.doc-totals-table { width: 100%; font-size: 13px; }
+.doc-totals-table td { padding: 5px 8px; }
+.doc-totals-table .grand td { font-size: 15px; font-weight: 700; color: #1a3a2a; border-top: 2px solid #1a3a2a; padding-top: 8px; }
+.doc-payment { background: #f8fafc; border-radius: 8px; padding: 12px 16px; font-size: 12px; min-width: 200px; }
+.doc-payment h4 { font-size: 12px; font-weight: 700; color: #1a3a2a; margin-bottom: 8px; border-bottom: 1px solid #d4af6a; padding-bottom: 4px; }
+.doc-remarks { margin-bottom: 16px; }
+.doc-remarks h4 { font-size: 12px; font-weight: 700; color: #1a3a2a; margin-bottom: 6px; }
+.doc-remark-item { font-size: 11.5px; color: #475569; padding: 2px 0; display: flex; align-items: flex-start; gap: 6px; }
+.doc-remark-item::before { content: '•'; color: #d4af6a; font-weight: 700; flex-shrink: 0; }
+.doc-timeline { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; }
+.doc-tl-item { text-align: center; }
+.doc-tl-label { font-size: 10px; color: #64748b; font-weight: 700; }
+.doc-tl-val { font-size: 12px; color: #1a3a2a; font-weight: 600; margin-top: 3px; }
+.doc-sig-section { display: flex; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e2e8f0; }
+.doc-sig-box { text-align: center; width: 160px; }
+.doc-sig-line { border-top: 1px solid #1a3a2a; margin-top: 30px; padding-top: 4px; font-size: 11px; color: #64748b; }
+.doc-footer { text-align: center; margin-top: 16px; font-size: 11px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+.doc-order-badge { display: inline-block; background: #fef3c7; color: #92400e; border: 1px solid #d4af6a; padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-right: 10px; }
+.doc-bank { font-size: 11.5px; color: #475569; line-height: 1.7; }
+.doc-bank strong { color: #1a3a2a; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 1000; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 14px; padding: 28px; max-width: 460px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 10px; color: #1a3a2a; }
+.modal p { color: #64748b; font-size: 14px; margin-bottom: 16px; }
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+/* BREADCRUMB NAV */
+.breadcrumb { display: flex; align-items: center; gap: 6px; padding: 10px 32px; background: white; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+.breadcrumb-back { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 8px; border: 1.5px solid #e2e8f0; background: white; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 600; color: #1a3a2a; transition: all .15s; }
+.breadcrumb-back:hover { background: #f0fdf4; border-color: #1a3a2a; }
+.breadcrumb-back:disabled { opacity: .35; cursor: default; }
+.breadcrumb-sep { color: #cbd5e1; }
+.breadcrumb-item { color: #64748b; }
+.breadcrumb-item.current { color: #1a3a2a; font-weight: 600; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+/* SEARCH */
+.search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+.search-bar input { flex: 1; max-width: 340px; }
+
+/* AUTOCOMPLETE */
+.ac-wrap { position: relative; }
+#ac-portal { position: fixed; background: white; border: 1.5px solid #1a3a2a; border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,.18); z-index: 9999; max-height: 320px; overflow-y: auto; display: none; min-width: 340px; }
+#ac-portal.open { display: block; }
+.ac-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f1f5f9; }
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.focused { background: #f0fdf4; }
+.ac-item-title { font-size: 13px; font-weight: 700; color: #1a3a2a; }
+.ac-item-detail { font-size: 11.5px; color: #64748b; margin-top: 3px; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 420px; }
+
+/* SETTINGS LOGO */
+.logo-upload-area { border: 2px dashed #d4af6a; border-radius: 10px; padding: 20px; text-align: center; cursor: pointer; background: #fffdf5; }
+.logo-upload-area img { max-height: 80px; max-width: 200px; object-fit: contain; display: block; margin: 0 auto 10px; }
+.logo-upload-area p { font-size: 13px; color: #64748b; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="header-logo">
+      <img src="image2.png" alt="לוגו" onerror="this.style.display='none'">
+      <h1>טאץ' ווד עיצוב נוף</h1>
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline btn-sm" onclick="showScreen('screen-list')" style="color:white;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.1)">📋 הצעות</button>
+      <button class="btn btn-gold btn-sm" onclick="showSettings()">⚙ הגדרות</button>
+    </div>
+  </header>
+
+  <!-- BREADCRUMB -->
+  <nav class="breadcrumb" id="breadcrumb" style="display:none">
+    <button class="breadcrumb-back" id="breadcrumb-back-btn" onclick="navBack()">&#8592; חזרה</button>
+    <span class="breadcrumb-sep">|</span>
+    <span id="breadcrumb-trail"></span>
+  </nav>
+
+  <!-- ===== LIST ===== -->
+  <div class="screen active main" id="screen-list">
+    <div class="list-stats" id="stats-row"></div>
+    <div class="tabs">
+      <button class="tab active" onclick="filterQuotes('all',this)">הכל</button>
+      <button class="tab" onclick="filterQuotes('draft',this)">טיוטות</button>
+      <button class="tab" onclick="filterQuotes('sent',this)">נשלחו</button>
+      <button class="tab" onclick="filterQuotes('approved',this)">אושרו</button>
+      <button class="tab" onclick="filterQuotes('order',this)">הזמנות עבודה</button>
+    </div>
+    <div class="list-header">
+      <h2 id="list-title">כל ההצעות</h2>
+      <button class="btn btn-gold" onclick="newQuote()">+ הצעת מחיר חדשה</button>
+    </div>
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="חפש לפי שם לקוח, מספר הצעה..." oninput="renderList()">
+    </div>
+    <div class="quotes-table-wrap">
+      <table id="quotes-table">
+        <thead>
+          <tr>
+            <th>מספר</th>
+            <th>לקוח</th>
+            <th>תאריך</th>
+            <th>פרויקט</th>
+            <th>סכום</th>
+            <th>סטטוס</th>
+            <th>פעולות</th>
+          </tr>
+        </thead>
+        <tbody id="quotes-tbody"></tbody>
+      </table>
+      <div class="empty-state" id="empty-state" style="display:none">
+        <div class="icon">🌿</div>
+        <p>אין הצעות מחיר עדיין — לחץ על "הצעת מחיר חדשה" להתחיל</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== EDIT ===== -->
+  <div class="screen main" id="screen-edit">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <h2 style="font-size:22px;font-weight:700;color:#1a3a2a" id="edit-title">הצעה חדשה</h2>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" onclick="saveQuote()">💾 שמור</button>
+        <button class="btn btn-gold btn-sm" onclick="saveAndPreview()">👁 שמור ותצוגה מקדימה</button>
+      </div>
+    </div>
+
+    <!-- Meta -->
+    <div class="card">
+      <div class="card-title">📄 פרטי הצעה</div>
+      <div class="form-grid form-grid-4">
+        <div class="form-group">
+          <label>מספר הצעה</label>
+          <input type="text" id="f-number" placeholder="2025-001">
+        </div>
+        <div class="form-group">
+          <label>תאריך</label>
+          <input type="date" id="f-date">
+        </div>
+        <div class="form-group">
+          <label>תוקף ההצעה</label>
+          <input type="date" id="f-expiry">
+        </div>
+        <div class="form-group">
+          <label>סטטוס</label>
+          <select id="f-status">
+            <option value="draft">טיוטה</option>
+            <option value="sent">נשלחה</option>
+            <option value="approved">אושרה</option>
+            <option value="cancelled">בוטלה</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Client -->
+    <div class="card">
+      <div class="card-title">👤 פרטי לקוח</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>שם הלקוח / חברה</label>
+          <input type="text" id="f-client-name" placeholder="שם הלקוח">
+        </div>
+        <div class="form-group">
+          <label>טלפון</label>
+          <input type="tel" id="f-client-phone" placeholder="050-0000000">
+        </div>
+        <div class="form-group">
+          <label>כתובת</label>
+          <input type="text" id="f-client-address" placeholder="רחוב, עיר">
+        </div>
+        <div class="form-group">
+          <label>אימייל</label>
+          <input type="email" id="f-client-email" placeholder="email@example.com">
+        </div>
+        <div class="form-group full">
+          <label>תיאור הפרויקט (שורת כותרת)</label>
+          <input type="text" id="f-project-desc" placeholder="לדוגמה: פרגולת אלומיניום + דק עץ בגינת הבית">
+        </div>
+      </div>
+    </div>
+
+    <!-- Items -->
+    <div class="card">
+      <div class="card-title">📋 פירוט עבודות</div>
+      <div style="overflow-x:auto">
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th class="col-idx">#</th>
+              <th class="col-title">תיאור</th>
+              <th class="col-detail">פירוט</th>
+              <th class="col-area">שטח מ"ר / יחידות</th>
+              <th class="col-price">מחיר למ"ר / יח' (₪)</th>
+              <th class="col-total">סכום (₪)</th>
+              <th class="col-action"></th>
+            </tr>
+          </thead>
+          <tbody id="items-tbody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn btn-outline btn-sm" onclick="addItemRow()">+ הוסף שורה</button>
+        <button class="btn btn-outline btn-sm" onclick="addSectionRow()">+ כותרת / פעולה כללית</button>
+      </div>
+    </div>
+
+    <!-- Totals -->
+    <div class="card">
+      <div class="card-title">💰 סיכום כספי</div>
+      <div class="totals-section">
+        <div class="totals-box">
+          <div class="totals-row">
+            <span class="totals-label">סכום לפני הנחה</span>
+            <span id="t-subtotal">₪0.00</span>
+          </div>
+          <div class="totals-row">
+            <span class="totals-label">
+              הנחה
+              <span class="discount-inline">
+                <input type="number" id="t-disc-val" value="0" min="0" oninput="calcTotals()">
+                <select id="t-disc-type" onchange="calcTotals()">
+                  <option value="percent">%</option>
+                  <option value="fixed">₪</option>
+                </select>
+              </span>
+            </span>
+            <span id="t-disc-amt">₪0.00</span>
+          </div>
+          <div class="totals-row">
+            <span class="totals-label">
+              מע"מ
+              <input type="number" id="t-vat" value="18" min="0" max="100" oninput="calcTotals()" style="width:52px;display:inline-block;margin-right:4px">%
+            </span>
+            <span id="t-vat-amt">₪0.00</span>
+          </div>
+          <div class="totals-row divider grand">
+            <span>סה"כ לתשלום</span>
+            <span id="t-total">₪0.00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="card">
+      <div class="card-title">📅 לוח זמנים</div>
+      <div class="timeline-grid">
+        <div class="timeline-item form-group">
+          <label>תחילת עבודה</label>
+          <input type="date" id="tl-start">
+        </div>
+        <div class="timeline-item form-group">
+          <label>זמן משוער באתר</label>
+          <input type="text" id="tl-duration" placeholder="10 ימים">
+        </div>
+        <div class="timeline-item form-group">
+          <label>סיום עבודה</label>
+          <input type="date" id="tl-end">
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment -->
+    <div class="card">
+      <div class="card-title">💳 תנאי תשלום</div>
+      <table id="payment-table" style="width:100%;border-collapse:collapse;margin-bottom:10px">
+        <thead>
+          <tr style="background:#f8fafc">
+            <th style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;color:#64748b;border-bottom:2px solid #e2e8f0;width:40%">שלב</th>
+            <th style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;color:#64748b;border-bottom:2px solid #e2e8f0;width:18%">אחוז %</th>
+            <th style="padding:8px 10px;text-align:left;font-size:12px;font-weight:700;color:#64748b;border-bottom:2px solid #e2e8f0;width:28%">סכום (₪)</th>
+            <th style="width:44px;border-bottom:2px solid #e2e8f0"></th>
+          </tr>
+        </thead>
+        <tbody id="payment-tbody"></tbody>
+        <tfoot>
+          <tr style="background:#f0fdf4">
+            <td style="padding:8px 10px;font-weight:700;color:#1a3a2a;font-size:13px">סה"כ</td>
+            <td style="padding:8px 10px;font-weight:700;color:#1a3a2a;font-size:13px" id="pay-pct-total">0%</td>
+            <td style="padding:8px 10px;font-weight:700;color:#1a3a2a;font-size:13px;text-align:left;direction:ltr" id="pay-sum-total">₪0.00</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-outline btn-sm" onclick="addPaymentRow()">+ הוסף שלב תשלום</button>
+        <span id="pay-warning" style="font-size:12px;color:#ef4444;display:none">⚠ סכום האחוזים אינו 100%</span>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card">
+      <div class="card-title">📝 הערות נוספות</div>
+      <textarea id="f-notes" placeholder="הערות חופשיות נוספות..."></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="showList()">ביטול</button>
+      <button class="btn btn-primary" onclick="saveQuote()">💾 שמור הצעה</button>
+      <button class="btn btn-gold" onclick="saveAndPreview()">👁 שמור ותצוגה מקדימה</button>
+    </div>
+  </div>
+
+  <!-- ===== PREVIEW ===== -->
+  <div class="screen main" id="screen-preview">
+    <div class="preview-actions">
+      <h2>תצוגה מקדימה</h2>
+      <button class="btn btn-outline btn-sm" onclick="editCurrentQuote()">✏ עריכה</button>
+      <button class="btn btn-outline btn-sm" onclick="openConvertModal(currentPreviewId)">📦 המרה להזמנת עבודה</button>
+      <button class="btn btn-gold btn-sm" onclick="exportPDF()">⬇ הורד PDF</button>
+      <button class="btn btn-sm" style="background:#25D366;color:white" onclick="shareWhatsApp()">📱 שלח בוואטסאפ</button>
+      <button class="btn btn-sm" style="background:#2563eb;color:white" onclick="shareEmail()">✉ שלח במייל</button>
+      <button class="btn btn-sm" style="background:#7c3aed;color:white" onclick="openProfit(currentPreviewId)">📊 ניתוח רווחיות</button>
+    </div>
+    <div id="quote-doc"></div>
+  </div>
+
+  <!-- ===== PROFIT ===== -->
+  <div class="screen main" id="screen-profit">
+    <div style="margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <div>
+        <h2 style="font-size:22px;font-weight:700;color:#1a3a2a;margin-bottom:4px">📊 ניתוח רווחיות פנימי</h2>
+        <p id="profit-subtitle" style="font-size:14px;color:#64748b"></p>
+      </div>
+      <button class="btn btn-gold" onclick="saveProfit()">💾 שמור</button>
+    </div>
+
+    <!-- חומרי גלם -->
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>🪵 חומרי גלם</span>
+        <button class="btn btn-outline btn-sm" onclick="addMaterialRow()">+ הוסף</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f8fafc">
+            <th style="padding:8px;text-align:right;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;min-width:180px">פריט</th>
+            <th style="padding:8px;text-align:right;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;width:90px">כמות</th>
+            <th style="padding:8px;text-align:right;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;width:110px">מחיר יחידה (₪)</th>
+            <th style="padding:8px;text-align:left;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;width:110px;direction:ltr">סכום (₪)</th>
+            <th style="width:36px;border-bottom:2px solid #e2e8f0"></th>
+          </tr></thead>
+          <tbody id="mat-tbody"></tbody>
+          <tfoot><tr style="background:#f0fdf4">
+            <td colspan="3" style="padding:8px;font-weight:700;color:#1a3a2a">סה"כ חומרי גלם</td>
+            <td style="padding:8px;font-weight:700;color:#1a3a2a;text-align:left;direction:ltr" id="mat-total">₪0.00</td>
+            <td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- קבלני משנה -->
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>👷 קבלני משנה</span>
+        <button class="btn btn-outline btn-sm" onclick="addCostRow('sub-tbody','sub-total')">+ הוסף</button>
+      </div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#f8fafc">
+          <th style="padding:8px;text-align:right;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0">תיאור</th>
+          <th style="padding:8px;text-align:left;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;width:140px;direction:ltr">סכום (₪)</th>
+          <th style="width:36px;border-bottom:2px solid #e2e8f0"></th>
+        </tr></thead>
+        <tbody id="sub-tbody"></tbody>
+        <tfoot><tr style="background:#f0fdf4">
+          <td style="padding:8px;font-weight:700;color:#1a3a2a">סה"כ קבלני משנה</td>
+          <td style="padding:8px;font-weight:700;color:#1a3a2a;text-align:left;direction:ltr" id="sub-total">₪0.00</td>
+          <td></td>
+        </tr></tfoot>
+      </table></div>
+    </div>
+
+    <!-- הוצאות משתנות -->
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>🔀 הוצאות משתנות</span>
+        <button class="btn btn-outline btn-sm" onclick="addCostRow('var-tbody','var-total')">+ הוסף</button>
+      </div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#f8fafc">
+          <th style="padding:8px;text-align:right;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0">תיאור</th>
+          <th style="padding:8px;text-align:left;font-size:12px;color:#64748b;border-bottom:2px solid #e2e8f0;width:140px;direction:ltr">סכום (₪)</th>
+          <th style="width:36px;border-bottom:2px solid #e2e8f0"></th>
+        </tr></thead>
+        <tbody id="var-tbody"></tbody>
+        <tfoot><tr style="background:#f0fdf4">
+          <td style="padding:8px;font-weight:700;color:#1a3a2a">סה"כ הוצאות משתנות</td>
+          <td style="padding:8px;font-weight:700;color:#1a3a2a;text-align:left;direction:ltr" id="var-total">₪0.00</td>
+          <td></td>
+        </tr></tfoot>
+      </table></div>
+    </div>
+
+    <!-- הוצאות קבועות -->
+    <div class="card">
+      <div class="card-title">🏛 הוצאות קבועות</div>
+      <!-- הקצאה אוטומטית -->
+      <div style="background:#f8fafc;border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="font-size:13px;color:#475569">עלות ליום (מהגדרות): <strong id="fix-daily-display">₪0.00</strong></div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:13px;color:#475569;white-space:nowrap">ימי עבודה לפרויקט:</label>
+          <input type="number" id="fix-project-days" min="0" step="1" value="0" style="width:70px;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-family:inherit;font-size:14px;text-align:center" oninput="calcFixAllocation()">
+        </div>
+        <div style="font-size:13px;color:#1a3a2a;font-weight:700">= <span id="fix-allocation">₪0.00</span></div>
+      </div>
+      <!-- פריטים נוספים -->
+      <div style="font-size:12px;color:#64748b;margin-bottom:8px">הוצאות קבועות נוספות לפרויקט זה (אם קיימות):</div>
+      <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+        <thead><tr style="background:#f8fafc">
+          <th style="padding:8px;text-align:right;font-size:12px;color:#64748b;border-bottom:1px solid #e2e8f0">תיאור</th>
+          <th style="padding:8px;text-align:left;font-size:12px;color:#64748b;border-bottom:1px solid #e2e8f0;width:140px;direction:ltr">סכום (₪)</th>
+          <th style="width:36px;border-bottom:1px solid #e2e8f0"></th>
+        </tr></thead>
+        <tbody id="fix-tbody"></tbody>
+      </table></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-outline btn-sm" onclick="addCostRow('fix-tbody','fix-extra-total');calcProfitSummary()">+ הוסף פריט נוסף</button>
+        <div style="font-size:13px;color:#1a3a2a;font-weight:700">סה"כ הוצאות קבועות: <span id="fix-total">₪0.00</span></div>
+      </div>
+    </div>
+
+    <!-- סיכום רווחיות -->
+    <div class="card">
+      <div class="card-title">💹 סיכום רווחיות</div>
+      <table style="width:100%;border-collapse:collapse;max-width:480px">
+        <tbody id="profit-summary">
+          <tr><td style="padding:8px 10px;color:#475569">הכנסה (לפני מע"מ)</td><td style="padding:8px 10px;text-align:left;direction:ltr;font-weight:600" id="ps-revenue">₪0.00</td></tr>
+          <tr style="background:#fafafa"><td style="padding:8px 10px;color:#475569">חומרי גלם</td><td style="padding:8px 10px;text-align:left;direction:ltr" id="ps-mat">₪0.00</td></tr>
+          <tr><td style="padding:8px 10px;color:#475569">קבלני משנה</td><td style="padding:8px 10px;text-align:left;direction:ltr" id="ps-sub">₪0.00</td></tr>
+          <tr style="background:#fafafa"><td style="padding:8px 10px;color:#475569">הוצאות משתנות</td><td style="padding:8px 10px;text-align:left;direction:ltr" id="ps-var">₪0.00</td></tr>
+          <tr><td style="padding:8px 10px;color:#475569">הוצאות קבועות</td><td style="padding:8px 10px;text-align:left;direction:ltr" id="ps-fix">₪0.00</td></tr>
+          <tr style="border-top:2px solid #1a3a2a"><td style="padding:10px;font-weight:700;color:#1a3a2a;font-size:15px">רווח גולמי</td><td style="padding:10px;text-align:left;direction:ltr;font-weight:700;font-size:15px" id="ps-profit">₪0.00</td></tr>
+          <tr><td style="padding:8px 10px;font-weight:700;color:#1a3a2a;font-size:15px">אחוז רווח</td><td style="padding:8px 10px;text-align:left;direction:ltr;font-weight:700;font-size:15px" id="ps-margin">0%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ===== SETTINGS ===== -->
+  <div class="screen main" id="screen-settings">
+    <div style="margin-bottom:18px">
+      <h2 style="font-size:22px;font-weight:700;color:#1a3a2a">הגדרות חברה</h2>
+    </div>
+    <div class="card">
+      <div class="card-title">💾 גיבוי וסנכרון בין מכשירים</div>
+      <p style="font-size:13px;color:#64748b;margin:0 0 12px">ייצא קובץ גיבוי ממכשיר אחד, ופתח ייבא אותו במכשיר השני.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="exportAllData()">⬇ ייצא נתונים</button>
+        <button class="btn" style="background:#f1f5f9;color:#1a3a2a" onclick="document.getElementById('import-file').click()">⬆ ייבא נתונים</button>
+        <input type="file" id="import-file" accept="application/json,.json" style="display:none" onchange="importAllData(this)">
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏢 פרטי העסק</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>שם החברה</label>
+          <input type="text" id="s-company" value="טאץ' ווד עיצוב נוף בע&quot;מ">
+        </div>
+        <div class="form-group">
+          <label>ח.פ / עוסק מורשה</label>
+          <input type="text" id="s-regno">
+        </div>
+        <div class="form-group">
+          <label>טלפון</label>
+          <input type="tel" id="s-phone">
+        </div>
+        <div class="form-group">
+          <label>אימייל</label>
+          <input type="email" id="s-email">
+        </div>
+        <div class="form-group full">
+          <label>כתובת</label>
+          <input type="text" id="s-address">
+        </div>
+        <div class="form-group full">
+          <label>לוגו</label>
+          <div class="logo-upload-area" onclick="document.getElementById('s-logo-input').click()">
+            <img id="s-logo-preview" src="image2.png" alt="לוגו">
+            <p>לחץ להחלפת הלוגו</p>
+            <input type="file" id="s-logo-input" accept="image/*" style="display:none" onchange="handleLogo(this)">
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏦 פרטי בנק</div>
+      <div class="form-grid form-grid-3">
+        <div class="form-group">
+          <label>שם הבנק</label>
+          <input type="text" id="s-bank-name" value="בנק מזרחי">
+        </div>
+        <div class="form-group">
+          <label>מספר סניף</label>
+          <input type="text" id="s-bank-branch" value="583">
+        </div>
+        <div class="form-group">
+          <label>מספר חשבון</label>
+          <input type="text" id="s-bank-account" value="123603">
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📋 תנאי תשלום ברירת מחדל</div>
+      <textarea id="s-payment-default" rows="3"></textarea>
+    </div>
+    <div class="card">
+      <div class="card-title">⚠ הערות סטנדרטיות (מופיעות בכל הצעה)</div>
+      <textarea id="s-remarks" rows="10"></textarea>
+      <p style="font-size:12px;color:#94a3b8;margin-top:8px">שורה אחת לכל הערה</p>
+    </div>
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>📦 קטלוג פריטים</span>
+        <button class="btn btn-gold btn-sm" onclick="addCatalogRow()">+ הוסף פריט</button>
+      </div>
+      <p style="font-size:12px;color:#64748b;margin-bottom:12px">הפריטים מופיעים ברשימת הבחירה בכל הצעת מחיר. ערוך ישירות בטבלה ולחץ "שמור הגדרות".</p>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse" id="catalog-table">
+          <thead>
+            <tr style="background:#f8fafc">
+              <th style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;color:#64748b;border-bottom:2px solid #e2e8f0;width:30%">תיאור</th>
+              <th style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;color:#64748b;border-bottom:2px solid #e2e8f0">פירוט</th>
+              <th style="width:44px;border-bottom:2px solid #e2e8f0"></th>
+            </tr>
+          </thead>
+          <tbody id="catalog-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- קטלוג חומרי גלם -->
+    <div class="card">
+      <div class="card-title">🪵 קטלוג חומרי גלם</div>
+      <p style="font-size:12px;color:#64748b;margin-bottom:16px">חומרים אלו יופיעו ברשימת הבחירה בניתוח הרווחיות. ניתן להגדיר מחיר יחידה כברירת מחדל.</p>
+
+      <div style="margin-bottom:20px">
+        <div style="font-weight:700;color:#1a3a2a;font-size:13px;padding:6px 10px;background:#f0fdf4;border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span>🔩 מוצרי אלומיניום</span>
+          <button class="btn btn-outline btn-sm" onclick="addMaterialCatalogRow('aluminum')">+ הוסף</button>
+        </div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f8fafc">
+            <th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0">שם חומר</th>
+            <th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0;width:90px">יחידה</th>
+            <th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0;width:110px">מחיר ברירת מחדל (₪)</th>
+            <th style="width:36px;border-bottom:1px solid #e2e8f0"></th>
+          </tr></thead>
+          <tbody id="mat-cat-aluminum"></tbody>
+        </table></div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <div style="font-weight:700;color:#1a3a2a;font-size:13px;padding:6px 10px;background:#f0fdf4;border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span>🪵 מוצרי עץ</span>
+          <button class="btn btn-outline btn-sm" onclick="addMaterialCatalogRow('wood')">+ הוסף</button>
+        </div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f8fafc">
+            <th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0">שם חומר</th>
+            <th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0;width:90px">יחידה</th>
+            <th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0;width:110px">מחיר ברירת מחדל (₪)</th>
+            <th style="width:36px;border-bottom:1px solid #e2e8f0"></th>
+          </tr></thead>
+          <tbody id="mat-cat-wood"></tbody>
+        </table></div>
+      </div>
+
+      <div style="margin-bottom:8px">
+        <div style="font-weight:700;color:#1a3a2a;font-size:13px;padding:6px 10px;background:#f0fdf4;border-radius:6px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <span>🔧 שונות</span>
+          <button class="btn btn-outline btn-sm" onclick="addMaterialCatalogRow('misc')">+ הוסף</button>
+        </div>
+        <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">
+          <thead><tr style="background:#f8fafc">
+            <th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0">שם חומר</th>
+            <th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0;width:90px">יחידה</th>
+            <th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;color:#64748b;border-bottom:1px solid #e2e8f0;width:110px">מחיר ברירת מחדל (₪)</th>
+            <th style="width:36px;border-bottom:1px solid #e2e8f0"></th>
+          </tr></thead>
+          <tbody id="mat-cat-misc"></tbody>
+        </table></div>
+      </div>
+    </div>
+    <!-- הוצאות קבועות חודשיות -->
+    <div class="card">
+      <div class="card-title">🏛 הוצאות קבועות חודשיות</div>
+      <p style="font-size:12px;color:#64748b;margin-bottom:14px">הכנס את ההוצאות החודשיות הקבועות של העסק. המערכת תחשב עלות ליום עבודה ותקצה אותה לכל הצעה לפי מספר ימי העבודה המשוערים.</p>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px">
+          <label style="font-size:13px;font-weight:600;color:#1a3a2a;white-space:nowrap">ימי עבודה בחודש:</label>
+          <input type="number" id="fc-days-per-month" value="22" min="1" max="31" style="width:70px;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:14px;text-align:center" oninput="calcFcSummary()">
+        </div>
+        <div style="background:#f0fdf4;border-radius:8px;padding:8px 16px;font-size:13px;color:#1a3a2a">
+          עלות ליום עבודה: <strong id="fc-daily-cost">₪0.00</strong>
+        </div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+        <thead><tr style="background:#f8fafc">
+          <th style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;color:#64748b;border-bottom:2px solid #e2e8f0">סעיף הוצאה</th>
+          <th style="padding:8px 10px;text-align:right;font-size:12px;font-weight:700;color:#64748b;border-bottom:2px solid #e2e8f0;width:150px">סכום חודשי (₪)</th>
+          <th style="width:36px;border-bottom:2px solid #e2e8f0"></th>
+        </tr></thead>
+        <tbody id="fc-tbody"></tbody>
+        <tfoot><tr style="background:#f0fdf4">
+          <td style="padding:8px 10px;font-weight:700;color:#1a3a2a">סה"כ חודשי</td>
+          <td style="padding:8px 10px;font-weight:700;color:#1a3a2a;text-align:left;direction:ltr" id="fc-monthly-total">₪0.00</td>
+          <td></td>
+        </tr></tfoot>
+      </table>
+      <button class="btn btn-outline btn-sm" onclick="addFcRow()">+ הוסף סעיף</button>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-gold" onclick="saveSettings()">💾 שמור הגדרות</button>
+    </div>
+  </div>
+</div>
+
+<!-- Autocomplete Portal -->
+<div id="ac-portal"></div>
+
+<!-- Detail Popup -->
+<div id="detail-popup" style="position:fixed;z-index:9998;display:none;background:white;border:1.5px solid #1a3a2a;border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,.22);padding:10px;min-width:320px;max-width:520px">
+  <textarea id="detail-popup-ta" rows="3" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;font-family:inherit;font-size:14px;resize:none;overflow:hidden;line-height:1.55;direction:rtl" placeholder="פירוט..."></textarea>
+  <div style="text-align:left;margin-top:6px">
+    <button onclick="closeDetailPopup()" style="background:#1a3a2a;color:white;border:none;border-radius:6px;padding:5px 16px;font-family:inherit;font-size:13px;cursor:pointer">סגור</button>
+  </div>
+</div>
+<datalist id="milestone-labels">
+  <option value="הזמנה">
+  <option value="גמר תשתיות והספקת עץ">
+  <option value="תחילת עבודה">
+  <option value="גמר ביצוע">
+  <option value="סיום עבודה">
+  <option value="מקדמה">
+  <option value="יתרה">
+</datalist>
+<datalist id="mat-list"></datalist>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal">
+    <h3>מחיקת הצעה</h3>
+    <p>האם אתה בטוח שברצונך למחוק הצעה זו? פעולה זו אינה הפיכה.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modal-delete')">ביטול</button>
+      <button class="btn btn-danger" id="btn-confirm-delete">מחק</button>
+    </div>
+  </div>
+</div>
+
+<!-- Convert Modal -->
+<div class="modal-overlay" id="modal-convert">
+  <div class="modal">
+    <h3>המרה להזמנת עבודה</h3>
+    <p>הכנס מספר הזמנת עבודה (אופציונלי):</p>
+    <input type="text" id="order-num-input" placeholder="למשל: HZ-2025-042" style="width:100%;margin-bottom:6px">
+    <p style="font-size:12px;color:#94a3b8">ניתן להשאיר ריק</p>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn btn-outline" onclick="closeModal('modal-convert')">ביטול</button>
+      <button class="btn btn-gold" id="btn-confirm-convert">המר להזמנה</button>
+    </div>
+  </div>
+</div>
+
+<div id="signin-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#f8fafc;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:Heebo,sans-serif">
+  <div style="font-size:20px;font-weight:700;color:#1a3a2a">טאץ' ווד - הצעות מחיר</div>
+  <div style="font-size:14px;color:#64748b">התחבר עם חשבון Google כדי לסנכרן בין המכשירים</div>
+  <button onclick="cloudSignIn()" style="background:#1a3a2a;color:white;border:none;border-radius:8px;padding:12px 24px;font-size:15px;cursor:pointer">התחבר עם Google</button>
+</div>
+<script>
+(function(){
+  const FB_CONFIG = {
+    apiKey: "AIzaSyDJXnPErlUGVUelkoDAr8fAZYLEpNLTTZQ",
+    authDomain: "touch-wood-quote.firebaseapp.com",
+    projectId: "touch-wood-quote",
+    storageBucket: "touch-wood-quote.firebasestorage.app",
+    messagingSenderId: "325378459953",
+    appId: "1:325378459953:web:6651c4b35ead5a59d10810"
+  };
+  const CLOUD_KEYS = ['tw_quotes','tw_settings','tw_catalog','tw_materials','tw_fixed_costs'];
+  const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
+  const _setItem = Storage.prototype.setItem;
+  const _getItem = Storage.prototype.getItem;
+  const cloud = { db: null, auth: null, fs: null, authMod: null, user: null, provider: null };
+
+  Storage.prototype.setItem = function(k, v) {
+    _setItem.call(this, k, v);
+    if (this === localStorage && CLOUD_KEYS.includes(k) && cloud.user) cloudSave(k, v);
+  };
+
+  async function cloudSave(k, v) {
+    await cloud.fs.setDoc(cloud.fs.doc(cloud.db, 'users', cloud.user.uid, 'data', k), { value: v, updated: Date.now() });
+  }
+
+  async function cloudPull() {
+    let changed = false;
+    for (const k of CLOUD_KEYS) {
+      const snap = await cloud.fs.getDoc(cloud.fs.doc(cloud.db, 'users', cloud.user.uid, 'data', k));
+      const local = _getItem.call(localStorage, k);
+      if (snap.exists()) {
+        const v = snap.data().value;
+        if (v !== local) { _setItem.call(localStorage, k, v); changed = true; }
+      } else if (local !== null) {
+        await cloudSave(k, local);
+      }
+    }
+    if (changed) location.reload();
+  }
+
+  window.cloudSignIn = function() {
+    cloud.authMod.signInWithRedirect(cloud.auth, new cloud.authMod.GoogleAuthProvider())
+      .catch(e => alert('ההתחברות נכשלה: ' + e.code + ' ' + e.message));
+  };
+
+  async function initCloud() {
+    try {
+      const appMod = await import(FB + 'firebase-app.js');
+      cloud.authMod = await import(FB + 'firebase-auth.js');
+      cloud.fs = await import(FB + 'firebase-firestore.js');
+      const app = appMod.initializeApp(FB_CONFIG);
+      cloud.auth = cloud.authMod.getAuth(app);
+      cloud.db = cloud.fs.getFirestore(app);
+      cloud.authMod.getRedirectResult(cloud.auth).catch(e => alert('ההתחברות נכשלה: ' + e.code + ' ' + e.message));
+      cloud.authMod.onAuthStateChanged(cloud.auth, async user => {
+        if (!user) {
+          cloud.user = null;
+          document.getElementById('signin-overlay').style.display = 'flex';
+          return;
+        }
+        cloud.user = user;
+        document.getElementById('signin-overlay').style.display = 'none';
+        await cloudPull();
+      });
+    } catch (e) {
+      alert('שגיאה בחיבור לענן: ' + e.message);
+    }
+  }
+  initCloud();
+})();
+</script>
+<script>
+// ================================================================
+// STATE
+// ================================================================
+let quotes = JSON.parse(localStorage.getItem('tw_quotes') || '[]');
+let settings = JSON.parse(localStorage.getItem('tw_settings') || 'null') || defaultSettings();
+let currentFilter = 'all';
+let currentEditId = null;
+let currentPreviewId = null;
+
+// ================================================================
+// CATALOG — פריטים סטנדרטיים עם פירוט
+// ================================================================
+const DEFAULT_CATALOG = [
+  // פרגולות אלומיניום
+  { title: 'פרגולת אלומיניום', detail: 'פרגולת אלומיניום מרחפת עם סרגלי הצללה 2*4 ס"מ ורווחים של 2 ס"מ. מעל סנטף bh שקוף כולל איטומי קירות' },
+  { title: 'פרגולת אלומיניום – סרגלי הקלקה', detail: 'פרגולת אלומיניום עם פרופיל הקלקה תחתון 18*40 מ"מ, רווחים כל 15 מ"מ. כולל מרזב מובנה. מעל סנטף bh שקוף כולל איטומים' },
+  { title: 'פרגולת אלומיניום – ללא סרגלים', detail: 'מסגרת אלומיניום נשענת על עמודים, קורות תומכות באמצע וסנטף bh מעל. ללא סרגלי הצללה' },
+  { title: 'פרגולת אלומיניום – מרפסת', detail: 'פרגולת אלומיניום נשענת על עמודי 10*10 על מעקה בטון ומחוברת לקירות הבית. פרופיל היקפי 120*40, קורת רוחב 100*40, סרגלי הצללה 4*2 ס"מ ברווח 2 ס"מ. מעל סנטף bh שקוף כולל איטומי קירות' },
+  { title: 'פרגולה מעץ', detail: 'בניית פרגולה מעץ. קורה ראשית 200*300, קורת קיר 150*100, עמודים 200*250, קורות רוכבים 150*150 מולבשים במגרעות. חיפוי סרגלי הצללה 4*2 ס"מ ברווחים של 1 ס"מ. כל העץ צבוע 2 שכבות בצבע מגן עץ. כולל סנטף bh שקוף ואיטומים' },
+  { title: 'שדרוג פרגולה קיימת', detail: 'שדרוג פרגולה קיימת, צביעה בצבע בהיר, תליה על ידי מוטות פלדה, פירוק עמודים, התקנת סנטף bh שקוף גולל כולל איטומים' },
+  { title: 'הארכת פרגולה', detail: 'הארכת פרגולה קיימת בדיוק מאותם חומרים וצבע' },
+  { title: 'פירוק ופינוי פרגולה קיימת', detail: 'פירוק ופינוי פרגולת אלומיניום קיימת כולל כל הפסולת מהאתר' },
+  // דק עץ
+  { title: 'דק עץ – במבוק דחוס (DASSO)', detail: 'תכנון וביצוע דק עץ ממלוחות "במבוק דחוס" מסוג DASSO בעובי 2 ס"מ, כולל התקנה נסתרת עם מחברים מיוחדים. הדק יעמוד בעומסים של 500 ק"ג/מ"ר. תשתית עץ אורן מחוטא. כולל כל החומרים, האביזרים והאמצעים הדרושים – קומפלט' },
+  { title: 'חיפוי דק סביב בריכה', detail: 'מסגרת קופינג מסביב לבריכה כולל משטח שיזוף, דופן חזיתית מלאה, מדרגות ופתחי שירות למשאבה. מלוחות במבוק דחוס DASSO' },
+  { title: 'חידוש וצביעת דק קיים', detail: 'חידוש וצביעת דק קיים כולל שטיפה, שיוף וצביעה בצבע מגן עץ בגוון לבחירה' },
+  // גדרות ושערים – אלומיניום
+  { title: 'גדר אלומיניום – הייטק', detail: 'אספקה והתקנת גדר אלומיניום דגם הייטק זוויתי להסתרה מוחלטת. מטר רץ' },
+  { title: 'גדר אלומיניום מעל חומה', detail: 'גדרות אלומיניום דגם הייטק זוויתי מעל החומה. העמדת הפרופילים בין עמודים או בחזית העמודים לבחירה. מטר רץ' },
+  { title: 'גדר מקשרת', detail: 'גדר אלומיניום דגם הייטק זוויתי מקשרת בין השערים מעל החומה. מטר רץ' },
+  { title: 'גדר חניה', detail: 'גדר אלומיניום דגם הייטק זוויתי בגב החניה בין עמודים מעל החומה. מטר רץ' },
+  { title: 'גדר רשת', detail: 'גדר רשת איכותית מחוזקת לעמודי ברזל. מטר רץ' },
+  // גדרות ושערים – עץ
+  { title: 'גדר עץ', detail: 'הספקה והתקנת גדר עץ היקפית מעל החומה. עץ אורן צבוע בגוון לבחירה, סרגלי עץ אופקיים ברוחב 10 ס"מ. מטר רץ' },
+  // שערים
+  { title: 'שער כניסה – הייטק', detail: 'שער כניסה דגם הייטק זוויתי, כנף קבועה + שער, כולל מנעול חשמלי וידית מהודרת' },
+  { title: 'שער כניסה כפול – הייטק', detail: 'שער כניסה כפול דגם הייטק זוויתי, 2 כנפיים, כולל מנעול חשמלי וידית מהודרת' },
+  { title: 'שער פשפש', detail: 'שער פשפש אלומיניום דגם הייטק כולל מנעול חשמלי וידית מהודרת' },
+  { title: 'שער אשפה', detail: 'שער אלומיניום דגם הייטק זוויתי לתחנת אשפה, כולל ידית' },
+  { title: 'שער אלומיניום חשמלי', detail: 'שער אלומיניום חשמלי עם מנגנון אוטומטי ושלט רחוק' },
+  // סנטף ומרזב
+  { title: 'סנטף', detail: 'התקנת סנטף bh שקוף גולל כולל איטומי קירות מלאים' },
+  { title: 'החלפת סנטף', detail: 'פירוק ופינוי סנטף ישן, התקנת סנטף bh שקוף חדש כולל איטומים' },
+  { title: 'מרזב', detail: 'תוספת פרופיל ניקוז מים + מרזבים לאורך הפרגולה' },
+  // חשמל ותאורה
+  { title: 'הכנת נקודות חשמל', detail: 'הכנת נקודות חשמל במיקום שיידרש ע"י הלקוח. מחיר ליחידה' },
+  { title: 'הכנה לתאורה', detail: 'הכנת תשתית לנקודות תאורה במיקום שיידרש ע"י הלקוח. מחיר ליחידה' },
+  { title: 'הכנה למאווררים', detail: 'הכנת תשתית למאווררי תקרה במיקום שיידרש ע"י הלקוח. מחיר ליחידה' },
+  { title: 'הכנה לתאורה ומאווררים', detail: 'הכנת תשתית לתאורה ולמאווררים במיקום שיידרש ע"י הלקוח. מחיר ליחידה' },
+  { title: 'גוף תאורה – צמוד תקרה', detail: 'הספקה והתקנה של גוף תאורה לבן צמוד תקרה ip64' },
+  { title: 'גוף תאורה – צילינדר', detail: 'הספקה והתקנה של גוף תאורה צילינדר צמוד תקרה' },
+  { title: 'פסי לד מובנים', detail: 'פסי לד מובנים 12 וולט, גוון אור חם (3000), כולל דריבר ועמעם אלחוטי. מחיר לפס' },
+  { title: 'מאוורר תקרה', detail: 'הספקה והתקנה של מאוורר תקרה לפרגולה' },
+  { title: 'מסך זיפ חשמלי', detail: 'מסך זיפ חשמלי לסגירת הפרגולה, כולל מנוע ושלט רחוק' },
+  // עיגון וצבע
+  { title: 'עיגון לקיר', detail: 'תוספת עיגון לקיר עם קורות פלדה' },
+  { title: 'תוספת צבע מיוחד', detail: 'תוספת צבע מיוחד לפרגולה – מסגרת אפור כהה מגורען i-40' },
+  { title: 'צביעה', detail: 'צביעת האלמנטים בצבע לבחירת הלקוח' },
+  // כלליים
+  { title: 'הובלה ומנוף', detail: 'הובלת חומרים לאתר ושימוש במנוף להרמה' },
+  { title: 'עבודת מנוף', detail: 'עבודת מנוף לצורך ביצוע העבודה' },
+  { title: 'פירוק ופינוי – ריצוף', detail: 'פירוק ופינוי משטח מרוצף קיים כולל מכולת פסולת' },
+  { title: 'פירוק ופינוי – גדר ישנה', detail: 'פירוק ופינוי גדר ישנה כולל פינוי מהאתר' },
+  { title: 'פירוק ופינוי – דשא סינטטי', detail: 'פינוי דשא סינטטי וחפירה לגובה מתאים לדק' },
+  { title: 'מעקה היקפי', detail: 'מעקה היקפי מעץ אורן טרמי סביב הבריכה/הדק' },
+  { title: 'אדנית עץ', detail: 'בניית אדנית עץ עם חיפוי דק במבוק, כולל עיטוף ביריעת pvc ונקז' },
+  { title: 'מערכת השקיה אוטומטית', detail: 'מערכת השקיה אוטומטית כולל מחשב השקיה, פריסת קווי השקיה וטפטוף לפי הנדרש' },
+  { title: 'הנחה', detail: 'הנחה מיוחדת' },
+];
+let CATALOG = JSON.parse(localStorage.getItem('tw_catalog') || 'null') || DEFAULT_CATALOG.map(c=>({...c}));
+
+function defaultSettings() {
+  return {
+    company: "טאץ' ווד עיצוב נוף בע\"מ",
+    regno: '',
+    phone: '',
+    email: '',
+    address: '',
+    logo: 'image2.png',
+    bankName: 'בנק מזרחי',
+    bankBranch: '583',
+    bankAccount: '123603',
+    paymentDefault: 'מקדמה בעת ההזמנה, יתרה בגמר העבודה',
+    remarks: defaultRemarks()
+  };
+}
+function defaultRemarks() {
+  return [
+    'אם יחולו שינויים בגודל המשטחים במהלך הביצוע ההתחשבנות תעשה ע"פ ביצוע בפועל',
+    'אין ל-Touch Wood כל אחריות בעניין רישוי ורשויות הוועד המקומי ו/או הוועדה לתכנון ובניה',
+    'כתב אחריות למשך 5 שנים על כל עבודות העץ יינתן עם גמר ביצוע ותשלום סופי',
+    'ההצעה אינה כוללת עלויות הנפה במנוף',
+    'ההצעה אינה כוללת אלמנטים נוספים שלא הוזכרו במסמך זה',
+    'העברת מקדמה מהווה אישור סופי לביצוע העבודה',
+    'החברה מתחייבת לעמוד בלוחות הזמנים הנקוב למעט מקרים הקשורים ב"כח עליון" או עיכוב של בעלי מקצוע שלא קשורים אליה',
+    'החברה מכוסה בפוליסת ביטוח עבור צד ג',
+    'הצעת מחיר זו תקפה ל-14 יום'
+  ].join('\n');
+}
+
+// ================================================================
+// UTILS
+// ================================================================
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function genNum() {
+  const y = new Date().getFullYear();
+  const nums = quotes.filter(q => q.number && q.number.startsWith(y+'-')).map(q => parseInt(q.number.split('-')[1])||0);
+  return y + '-' + String((Math.max(0,...nums)+1)).padStart(3,'0');
+}
+function fmt(n) { return '₪' + parseFloat(n||0).toLocaleString('he-IL',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtDate(d) { if(!d) return ''; const [y,m,dd]=d.split('-'); return dd+'/'+m+'/'+y; }
+function today() { return new Date().toISOString().split('T')[0]; }
+function addDays(d,n) { const dt=new Date(d); dt.setDate(dt.getDate()+n); return dt.toISOString().split('T')[0]; }
+function statusLabel(s) { return {draft:'טיוטה',sent:'נשלחה',approved:'אושרה',cancelled:'בוטלה',order:'הזמנת עבודה'}[s]||s; }
+function statusBadge(s) { return `<span class="badge badge-${s}">${statusLabel(s)}</span>`; }
+function esc(v) { return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+// ================================================================
+// NAV — היסטוריה פנימית
+// ================================================================
+const navHistory = []; // stack of {screenId, label}
+
+const screenLabels = {
+  'screen-list': 'רשימת הצעות',
+  'screen-edit': 'עריכת הצעה',
+  'screen-preview': 'תצוגה מקדימה',
+  'screen-settings': 'הגדרות חברה',
+  'screen-profit': 'ניתוח רווחיות',
+};
+
+function showScreen(id, label, pushHistory) {
+  const current = document.querySelector('.screen.active');
+  if (pushHistory !== false && current && current.id !== id) {
+    navHistory.push({ screenId: current.id, label: screenLabels[current.id] || '' });
+  }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+  updateBreadcrumb(id, label);
+}
+
+function updateBreadcrumb(currentId) {
+  const nav = document.getElementById('breadcrumb');
+  const trail = document.getElementById('breadcrumb-trail');
+  const backBtn = document.getElementById('breadcrumb-back-btn');
+
+  if (currentId === 'screen-list') {
+    nav.style.display = 'none';
+    return;
+  }
+  nav.style.display = 'flex';
+
+  // בנה פירורי לחם
+  const crumbs = [{ label: 'רשימת הצעות' }, ...navHistory.slice(1), { label: screenLabels[currentId] || '' }];
+  trail.innerHTML = crumbs.map((c, i) =>
+    i === crumbs.length - 1
+      ? `<span class="breadcrumb-item current">${c.label}</span>`
+      : `<span class="breadcrumb-item">${c.label}</span><span class="breadcrumb-sep"> / </span>`
+  ).join('');
+
+  backBtn.disabled = navHistory.length === 0;
+}
+
+function navBack() {
+  if (!navHistory.length) return;
+  const prev = navHistory.pop();
+  // הפעל את המסך הקודם בלי להוסיף להיסטוריה
+  if (prev.screenId === 'screen-list') { renderList(); }
+  if (prev.screenId === 'screen-settings') { loadSettingsForm(); }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(prev.screenId).classList.add('active');
+  window.scrollTo(0, 0);
+  updateBreadcrumb(prev.screenId);
+}
+
+function showList() {
+  navHistory.length = 0;
+  renderList();
+  showScreen('screen-list', '', false);
+}
+function showSettings() {
+  loadSettingsForm();
+  showScreen('screen-settings');
+}
+function editCurrentQuote() { openEdit(currentEditId || currentPreviewId); }
+
+// ================================================================
+// SETTINGS
+// ================================================================
+function loadSettingsForm() {
+  document.getElementById('s-company').value = settings.company||'';
+  document.getElementById('s-regno').value = settings.regno||'';
+  document.getElementById('s-phone').value = settings.phone||'';
+  document.getElementById('s-email').value = settings.email||'';
+  document.getElementById('s-address').value = settings.address||'';
+  document.getElementById('s-bank-name').value = settings.bankName||'';
+  document.getElementById('s-bank-branch').value = settings.bankBranch||'';
+  document.getElementById('s-bank-account').value = settings.bankAccount||'';
+  document.getElementById('s-payment-default').value = settings.paymentDefault||'';
+  document.getElementById('s-remarks').value = settings.remarks||'';
+  if (settings.logo) { document.getElementById('s-logo-preview').src = settings.logo; }
+  renderCatalogTable();
+  renderMaterialsTable();
+  renderFixedCostsSettings();
+}
+const BACKUP_KEYS = ['tw_quotes','tw_settings','tw_catalog','tw_materials','tw_fixed_costs'];
+function exportAllData() {
+  const data = { app: 'touch-wood-quotes', exportedAt: new Date().toISOString() };
+  BACKUP_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v !== null) data[k] = JSON.parse(v); });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'touch-wood-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function importAllData(input) {
+  const file = input.files[0];
+  input.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try { data = JSON.parse(reader.result); } catch (e) { toast('קובץ לא תקין'); return; }
+    if (data.app !== 'touch-wood-quotes') { toast('זה לא קובץ גיבוי של האפליקציה'); return; }
+    if (!confirm('הייבוא יחליף את כל הנתונים הקיימים במכשיר. להמשיך?')) return;
+    BACKUP_KEYS.forEach(k => { if (data[k] !== undefined) localStorage.setItem(k, JSON.stringify(data[k])); });
+    location.reload();
+  };
+  reader.readAsText(file);
+}
+function saveSettings() {
+  settings.company = document.getElementById('s-company').value.trim();
+  settings.regno = document.getElementById('s-regno').value.trim();
+  settings.phone = document.getElementById('s-phone').value.trim();
+  settings.email = document.getElementById('s-email').value.trim();
+  settings.address = document.getElementById('s-address').value.trim();
+  settings.bankName = document.getElementById('s-bank-name').value.trim();
+  settings.bankBranch = document.getElementById('s-bank-branch').value.trim();
+  settings.bankAccount = document.getElementById('s-bank-account').value.trim();
+  settings.paymentDefault = document.getElementById('s-payment-default').value.trim();
+  settings.remarks = document.getElementById('s-remarks').value.trim();
+  saveCatalogFromTable();
+  saveMaterialsFromTable();
+  saveFixedCostsSettings();
+  localStorage.setItem('tw_settings', JSON.stringify(settings));
+  toast('ההגדרות נשמרו ✓');
+  showList();
+}
+function renderCatalogTable() {
+  const tbody = document.getElementById('catalog-tbody');
+  tbody.innerHTML = '';
+  CATALOG.forEach((item, i) => {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #f1f5f9';
+    tr.innerHTML = `
+      <td style="padding:6px 8px;vertical-align:top">
+        <input type="text" value="${esc(item.title)}" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px" placeholder="תיאור">
+      </td>
+      <td style="padding:6px 8px;vertical-align:top">
+        <textarea rows="2" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px;resize:vertical" placeholder="פירוט">${esc(item.detail)}</textarea>
+      </td>
+      <td style="padding:6px 8px;text-align:center;vertical-align:top">
+        <button onclick="this.closest('tr').remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:18px;padding:4px 6px" title="מחק">×</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+function addCatalogRow() {
+  const tbody = document.getElementById('catalog-tbody');
+  const tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid #f1f5f9';
+  tr.innerHTML = `
+    <td style="padding:6px 8px;vertical-align:top">
+      <input type="text" value="" style="width:100%;border:1.5px solid #d4af6a;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px" placeholder="תיאור">
+    </td>
+    <td style="padding:6px 8px;vertical-align:top">
+      <textarea rows="2" style="width:100%;border:1.5px solid #d4af6a;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px;resize:vertical" placeholder="פירוט"></textarea>
+    </td>
+    <td style="padding:6px 8px;text-align:center;vertical-align:top">
+      <button onclick="this.closest('tr').remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:18px;padding:4px 6px" title="מחק">×</button>
+    </td>`;
+  tbody.appendChild(tr);
+  tr.querySelector('input').focus();
+  tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+function saveCatalogFromTable() {
+  const rows = document.querySelectorAll('#catalog-tbody tr');
+  CATALOG = Array.from(rows).map(tr => {
+    const inputs = tr.querySelectorAll('input, textarea');
+    return { title: inputs[0].value.trim(), detail: inputs[1].value.trim() };
+  }).filter(c => c.title);
+  localStorage.setItem('tw_catalog', JSON.stringify(CATALOG));
+}
+function renderMaterialsTable() {
+  ['aluminum','wood','misc'].forEach(g => {
+    const tbody = document.getElementById('mat-cat-'+g);
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    (MATERIALS[g]||[]).forEach(m => addMaterialCatalogRow(g, m));
+  });
+}
+function addMaterialCatalogRow(group, mat) {
+  const tbody = document.getElementById('mat-cat-'+group);
+  const tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid #f1f5f9';
+  tr.innerHTML = `
+    <td style="padding:5px 8px"><input type="text" value="${esc(mat?.title||'')}" placeholder="שם החומר" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-family:inherit;font-size:13px"></td>
+    <td style="padding:5px 8px"><input type="text" value="${esc(mat?.unit||'')}" placeholder='יח׳' style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-family:inherit;font-size:13px"></td>
+    <td style="padding:5px 8px"><input type="number" min="0" step="any" value="${mat?.price||''}" placeholder="0.00" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-family:inherit;font-size:13px"></td>
+    <td style="padding:5px 8px;text-align:center"><button onclick="this.closest('tr').remove()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:18px">×</button></td>`;
+  tbody.appendChild(tr);
+  if (!mat) { tr.querySelector('input').focus(); tr.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+}
+function saveMaterialsFromTable() {
+  ['aluminum','wood','misc'].forEach(g => {
+    MATERIALS[g] = Array.from(document.querySelectorAll('#mat-cat-'+g+' tr')).map(tr => {
+      const inputs = tr.querySelectorAll('input');
+      return { title: inputs[0].value.trim(), unit: inputs[1].value.trim(), price: parseFloat(inputs[2].value)||0 };
+    }).filter(m => m.title);
+  });
+  localStorage.setItem('tw_materials', JSON.stringify(MATERIALS));
+  const dl = document.getElementById('mat-list');
+  dl.innerHTML = ['aluminum','wood','misc'].flatMap(g => MATERIALS[g]||[]).map(m => `<option value="${esc(m.title)}">`).join('');
+}
+function renderFixedCostsSettings() {
+  document.getElementById('fc-days-per-month').value = FIXED_COSTS.workingDaysPerMonth || 22;
+  const tbody = document.getElementById('fc-tbody');
+  tbody.innerHTML = '';
+  (FIXED_COSTS.items||[]).forEach(item => addFcRow(item));
+  calcFcSummary();
+}
+function addFcRow(item) {
+  const tbody = document.getElementById('fc-tbody');
+  const tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid #f1f5f9';
+  tr.innerHTML = `
+    <td style="padding:6px 8px"><input type="text" value="${esc(item?.label||'')}" placeholder="תיאור הוצאה..." style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px"></td>
+    <td style="padding:6px 8px"><input type="number" min="0" step="any" value="${item?.monthly||''}" placeholder="0.00" style="width:130px;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px" oninput="calcFcSummary()"></td>
+    <td style="padding:6px 8px;text-align:center"><button onclick="this.closest('tr').remove();calcFcSummary()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:18px">×</button></td>`;
+  tbody.appendChild(tr);
+  if (!item) tr.querySelector('input').focus();
+}
+function calcFcSummary() {
+  let total = 0;
+  document.querySelectorAll('#fc-tbody tr').forEach(tr => {
+    total += parseFloat(tr.querySelectorAll('input')[1]?.value)||0;
+  });
+  const days = parseInt(document.getElementById('fc-days-per-month')?.value)||22;
+  document.getElementById('fc-monthly-total').textContent = fmt(total);
+  document.getElementById('fc-daily-cost').textContent = fmt(total / days);
+}
+function saveFixedCostsSettings() {
+  FIXED_COSTS.workingDaysPerMonth = parseInt(document.getElementById('fc-days-per-month').value)||22;
+  FIXED_COSTS.items = Array.from(document.querySelectorAll('#fc-tbody tr')).map(tr => {
+    const inputs = tr.querySelectorAll('input');
+    return { label: inputs[0].value.trim(), monthly: parseFloat(inputs[1].value)||0 };
+  }).filter(i => i.label);
+  localStorage.setItem('tw_fixed_costs', JSON.stringify(FIXED_COSTS));
+}
+function handleLogo(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    settings.logo = e.target.result;
+    document.getElementById('s-logo-preview').src = settings.logo;
+    localStorage.setItem('tw_settings', JSON.stringify(settings));
+  };
+  reader.readAsDataURL(file);
+}
+
+// ================================================================
+// STATS + LIST
+// ================================================================
+function renderStats() {
+  const total = quotes.length;
+  const totalVal = quotes.reduce((s,q)=>s+(q.total||0),0);
+  const orders = quotes.filter(q=>q.status==='order').length;
+  const pending = quotes.filter(q=>q.status==='sent').length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="num">${total}</div><div class="lbl">סה"כ הצעות</div></div>
+    <div class="stat-card"><div class="num">${fmt(totalVal)}</div><div class="lbl">שווי כולל</div></div>
+    <div class="stat-card"><div class="num">${orders}</div><div class="lbl">הזמנות עבודה</div></div>
+    <div class="stat-card"><div class="num">${pending}</div><div class="lbl">ממתינות לאישור</div></div>
+  `;
+}
+function filterQuotes(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const titles={all:'כל ההצעות',draft:'טיוטות',sent:'הצעות שנשלחו',approved:'הצעות שאושרו',order:'הזמנות עבודה'};
+  document.getElementById('list-title').textContent = titles[f]||'';
+  renderList();
+}
+function renderList() {
+  renderStats();
+  const search = (document.getElementById('search-input')||{}).value?.toLowerCase()||'';
+  let list = currentFilter==='all' ? quotes : quotes.filter(q=>q.status===currentFilter);
+  if (search) list = list.filter(q=>(q.clientName||'').toLowerCase().includes(search)||(q.number||'').toLowerCase().includes(search)||(q.projectDesc||'').toLowerCase().includes(search));
+  list = list.slice().reverse();
+  const tbody = document.getElementById('quotes-tbody');
+  const empty = document.getElementById('empty-state');
+  if (!list.length) { tbody.innerHTML=''; empty.style.display='block'; document.getElementById('quotes-table').style.display='none'; return; }
+  empty.style.display='none'; document.getElementById('quotes-table').style.display='table';
+  tbody.innerHTML = list.map(q=>`
+    <tr>
+      <td><strong>${q.number||'—'}</strong>${q.orderNumber?`<br><small style="color:#92400e">הזמנה: ${q.orderNumber}</small>`:''}</td>
+      <td><strong>${q.clientName||'—'}</strong>${q.clientAddress?`<br><small style="color:#64748b">${q.clientAddress}</small>`:''}</td>
+      <td>${fmtDate(q.date)}</td>
+      <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${q.projectDesc||'—'}</td>
+      <td><strong style="color:#1a3a2a">${fmt(q.total)}</strong></td>
+      <td>${statusBadge(q.status)}</td>
+      <td>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">
+          <button class="btn btn-outline btn-sm btn-icon" title="תצוגה מקדימה" onclick="openPreview('${q.id}')">👁</button>
+          <button class="btn btn-outline btn-sm btn-icon" title="עריכה" onclick="openEdit('${q.id}')">✏</button>
+          <button class="btn btn-outline btn-sm btn-icon" title="שכפל" onclick="duplicateQuote('${q.id}')">📋</button>
+          ${q.status!=='order'?`<button class="btn btn-outline btn-sm btn-icon" title="המר להזמנת עבודה" onclick="openConvertModal('${q.id}')">📦</button>`:''}
+          <button class="btn btn-outline btn-sm btn-icon" title="מחק" style="color:#ef4444" onclick="openDeleteModal('${q.id}')">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ================================================================
+// EDIT
+// ================================================================
+function newQuote() {
+  currentEditId = null;
+  document.getElementById('edit-title').textContent = 'הצעת מחיר חדשה';
+  document.getElementById('f-number').value = genNum();
+  document.getElementById('f-date').value = today();
+  document.getElementById('f-expiry').value = addDays(today(),14);
+  document.getElementById('f-status').value = 'draft';
+  document.getElementById('f-client-name').value = '';
+  document.getElementById('f-client-phone').value = '';
+  document.getElementById('f-client-address').value = '';
+  document.getElementById('f-client-email').value = '';
+  document.getElementById('f-project-desc').value = '';
+  setPaymentMilestones(settings.defaultMilestones || defaultMilestones());
+  document.getElementById('f-notes').value = '';
+  document.getElementById('t-disc-val').value = 0;
+  document.getElementById('t-disc-type').value = 'percent';
+  document.getElementById('t-vat').value = 18;
+  ['tl-start','tl-end'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('tl-duration').value = '';
+  document.getElementById('items-tbody').innerHTML = '';
+  addItemRow();
+  calcTotals();
+  screenLabels['screen-edit'] = 'הצעה חדשה';
+  showScreen('screen-edit');
+}
+function openEdit(id) {
+  const q = quotes.find(x=>x.id===id); if(!q) return;
+  currentEditId = id;
+  document.getElementById('edit-title').textContent = 'עריכת הצעה ' + (q.number||'');
+  document.getElementById('f-number').value = q.number||'';
+  document.getElementById('f-date').value = q.date||today();
+  document.getElementById('f-expiry').value = q.expiry||'';
+  document.getElementById('f-status').value = q.status||'draft';
+  document.getElementById('f-client-name').value = q.clientName||'';
+  document.getElementById('f-client-phone').value = q.clientPhone||'';
+  document.getElementById('f-client-address').value = q.clientAddress||'';
+  document.getElementById('f-client-email').value = q.clientEmail||'';
+  document.getElementById('f-project-desc').value = q.projectDesc||'';
+  setPaymentMilestones(q.paymentMilestones || settings.defaultMilestones || defaultMilestones());
+  document.getElementById('f-notes').value = q.notes||'';
+  document.getElementById('t-disc-val').value = q.discVal||0;
+  document.getElementById('t-disc-type').value = q.discType||'percent';
+  document.getElementById('t-vat').value = q.vatRate!==undefined?q.vatRate:18;
+  document.getElementById('tl-start').value = q.tlStart||'';
+  document.getElementById('tl-duration').value = q.tlDuration||'';
+  document.getElementById('tl-end').value = q.tlEnd||'';
+  document.getElementById('items-tbody').innerHTML = '';
+  (q.items||[]).forEach(it => it.isSection ? addSectionRow(it.title) : addItemRow(it));
+  calcTotals();
+  const label = 'עריכת הצעה ' + (q.number||'') + (q.clientName ? ' – ' + q.clientName : '');
+  screenLabels['screen-edit'] = label;
+  showScreen('screen-edit');
+}
+
+function addItemRow(item) {
+  const tr = document.createElement('tr');
+  tr.dataset.type = 'item';
+  tr.innerHTML = `
+    <td class="col-idx" style="text-align:center;color:#94a3b8"></td>
+    <td class="col-title">
+      <input type="text" class="ac-input" value="${esc(item?.title||'')}" placeholder="בחר או הקלד תיאור..." autocomplete="off">
+    </td>
+    <td class="col-detail" style="cursor:pointer" onclick="openDetailPopup(this)">
+      <input type="hidden" class="detail-input" value="${esc(item?.detail||'')}">
+      <span class="detail-preview" style="font-size:13px;color:#334155;display:block;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:4px 6px">${esc(item?.detail||'') || '<span style="color:#94a3b8">לחץ לעריכה...</span>'}</span>
+    </td>
+    <td class="col-area"><input type="number" class="area-input" value="${item?.area||''}" placeholder="0" min="0" step="any" oninput="calcRowTotal(this)"></td>
+    <td class="col-price"><input type="number" class="price-input" value="${item?.price||''}" placeholder="0.00" min="0" step="any" oninput="calcRowTotal(this)"></td>
+    <td class="col-total"><span class="row-total">${item?.area&&item?.price?fmt(item.area*item.price):'₪0.00'}</span></td>
+    <td class="col-action"><button class="btn btn-sm" style="background:#fee2e2;color:#b91c1c;padding:5px 8px" onclick="removeRow(this)">✕</button></td>
+  `;
+  document.getElementById('items-tbody').appendChild(tr);
+  reindexRows();
+  initAC(tr.querySelector('.ac-input'), null, tr.querySelector('.detail-input'));
+}
+function addSectionRow(title) {
+  const tr = document.createElement('tr');
+  tr.dataset.type = 'section';
+  tr.innerHTML = `
+    <td colspan="5" style="background:#f0fdf4;padding:6px 8px">
+      <input type="text" value="${esc(title||'')}" placeholder="כותרת / פעולה כללית (ללא מחיר)" style="font-weight:700;color:#1a3a2a;background:transparent;border:none;border-bottom:1.5px solid #d4af6a;border-radius:0;width:100%">
+    </td>
+    <td class="col-total"><span class="row-total" style="background:transparent;color:#94a3b8">—</span></td>
+    <td class="col-action"><button class="btn btn-sm" style="background:#fee2e2;color:#b91c1c;padding:5px 8px" onclick="removeRow(this)">✕</button></td>
+  `;
+  document.getElementById('items-tbody').appendChild(tr);
+}
+function removeRow(btn) { btn.closest('tr').remove(); reindexRows(); calcTotals(); }
+
+// ================================================================
+// DETAIL POPUP
+// ================================================================
+let detailPopupCell = null;
+const detailPopup = document.getElementById('detail-popup');
+const detailPopupTa = document.getElementById('detail-popup-ta');
+
+function openDetailPopup(td) {
+  detailPopupCell = td;
+  const hidden = td.querySelector('.detail-input');
+  detailPopupTa.value = hidden.value;
+  // מיקום ליד התא
+  const r = td.getBoundingClientRect();
+  const popupW = 520;
+  let left = r.left;
+  if (left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
+  detailPopup.style.left = left + 'px';
+  detailPopup.style.top = (r.bottom + 4) + 'px';
+  detailPopup.style.display = 'block';
+  detailPopupTa.style.height = 'auto';
+  detailPopupTa.style.height = detailPopupTa.scrollHeight + 'px';
+  detailPopupTa.focus();
+  detailPopupTa.oninput = () => {
+    detailPopupTa.style.height = 'auto';
+    detailPopupTa.style.height = detailPopupTa.scrollHeight + 'px';
+  };
+}
+function closeDetailPopup() {
+  if (!detailPopupCell) return;
+  const hidden = detailPopupCell.querySelector('.detail-input');
+  const preview = detailPopupCell.querySelector('.detail-preview');
+  hidden.value = detailPopupTa.value;
+  preview.innerHTML = detailPopupTa.value ? esc(detailPopupTa.value) : '<span style="color:#94a3b8">לחץ לעריכה...</span>';
+  detailPopup.style.display = 'none';
+  detailPopupCell = null;
+}
+document.addEventListener('mousedown', e => {
+  if (detailPopup.style.display === 'block' && !detailPopup.contains(e.target) && !e.target.closest('.col-detail')) {
+    closeDetailPopup();
+  }
+});
+
+// ================================================================
+// AUTOCOMPLETE — portal-based (נמנע מגזירת overflow)
+// ================================================================
+const acPortal = document.getElementById('ac-portal');
+let acCurrentInput = null;
+let acCurrentDetail = null;
+let acCurrentMatches = [];
+let acFocusedIdx = -1;
+
+function acGetMatches(q) {
+  if (!q.trim()) return CATALOG;
+  const lq = q.toLowerCase();
+  return CATALOG.filter(c =>
+    c.title.toLowerCase().includes(lq) || c.detail.toLowerCase().includes(lq)
+  );
+}
+
+function acPosition(input) {
+  const r = input.getBoundingClientRect();
+  acPortal.style.top  = (r.bottom + 4) + 'px';
+  acPortal.style.left = r.left + 'px';
+  acPortal.style.width = Math.max(r.width, 360) + 'px';
+}
+
+function acRender(matches) {
+  acCurrentMatches = matches;
+  acFocusedIdx = -1;
+  acPortal.innerHTML = matches.length
+    ? matches.map((c, i) => `
+        <div class="ac-item" data-i="${i}">
+          <div class="ac-item-title">${c.title}</div>
+          <div class="ac-item-detail">${c.detail}</div>
+        </div>`).join('')
+    : '<div style="padding:12px;color:#94a3b8;font-size:13px">אין תוצאות</div>';
+  acPortal.classList.toggle('open', !!acCurrentInput);
+}
+
+function acSelect(c) {
+  if (!acCurrentInput) return;
+  acCurrentInput.value = c.title;
+  if (acCurrentDetail) {
+    acCurrentDetail.value = c.detail;
+    const preview = acCurrentDetail.closest('td')?.querySelector('.detail-preview');
+    if (preview) preview.innerHTML = c.detail ? esc(c.detail) : '<span style="color:#94a3b8">לחץ לעריכה...</span>';
+  }
+  acClose();
+  const tr = acCurrentInput.closest('tr');
+  tr?.querySelector('.area-input')?.focus();
+}
+
+function acClose() {
+  acPortal.classList.remove('open');
+  acCurrentInput = null;
+  acCurrentDetail = null;
+  acFocusedIdx = -1;
+}
+
+function acSetFocused(idx) {
+  const els = acPortal.querySelectorAll('.ac-item');
+  els.forEach(e => e.classList.remove('focused'));
+  acFocusedIdx = Math.max(0, Math.min(idx, els.length - 1));
+  if (els[acFocusedIdx]) { els[acFocusedIdx].classList.add('focused'); els[acFocusedIdx].scrollIntoView({block:'nearest'}); }
+}
+
+// לחיצה על פריט בפורטל
+acPortal.addEventListener('mousedown', e => {
+  const item = e.target.closest('.ac-item');
+  if (!item) return;
+  e.preventDefault();
+  acSelect(acCurrentMatches[+item.dataset.i]);
+});
+
+// סגירה בלחיצה מחוץ
+document.addEventListener('mousedown', e => {
+  if (!acPortal.contains(e.target) && e.target !== acCurrentInput) acClose();
+});
+
+// מעקב גלילה/שינוי גודל
+window.addEventListener('scroll', () => { if (acCurrentInput) acPosition(acCurrentInput); }, true);
+window.addEventListener('resize', () => { if (acCurrentInput) acPosition(acCurrentInput); });
+
+function initAC(input, _unused, detailInput) {
+  input.addEventListener('focus', () => {
+    acCurrentInput = input;
+    acCurrentDetail = detailInput;
+    acPosition(input);
+    acRender(acGetMatches(input.value));
+  });
+
+  input.addEventListener('input', () => {
+    if (acCurrentInput !== input) { acCurrentInput = input; acCurrentDetail = detailInput; }
+    acPosition(input);
+    acRender(acGetMatches(input.value));
+  });
+
+  input.addEventListener('keydown', e => {
+    if (!acPortal.classList.contains('open')) return;
+    if (e.key === 'ArrowDown')  { e.preventDefault(); acSetFocused(acFocusedIdx + 1); }
+    else if (e.key === 'ArrowUp')   { e.preventDefault(); acSetFocused(acFocusedIdx - 1); }
+    else if (e.key === 'Enter' && acFocusedIdx >= 0) { e.preventDefault(); acSelect(acCurrentMatches[acFocusedIdx]); }
+    else if (e.key === 'Escape') { acClose(); }
+  });
+
+  input.addEventListener('blur', () => {
+    // נותן זמן ל-mousedown על פריט לפעול לפני סגירה
+    setTimeout(() => { if (acCurrentInput === input) acClose(); }, 200);
+  });
+}
+function reindexRows() {
+  let i=1;
+  document.querySelectorAll('#items-tbody tr').forEach(tr=>{
+    if(tr.dataset.type==='item') { tr.cells[0].textContent=i++; }
+  });
+}
+function calcRowTotal(input) {
+  const tr = input.closest('tr');
+  const area = parseFloat(tr.querySelector('input:nth-of-type(3)')?.value)||0;
+  const price = parseFloat(tr.querySelector('input:nth-of-type(4)')?.value)||0;
+  tr.querySelector('.row-total').textContent = fmt(area*price);
+  calcTotals();
+}
+function calcTotals() {
+  let sub = 0;
+  document.querySelectorAll('#items-tbody tr[data-type="item"]').forEach(tr=>{
+    const area = parseFloat(tr.querySelectorAll('input')[2]?.value)||0;
+    const price = parseFloat(tr.querySelectorAll('input')[3]?.value)||0;
+    sub += area*price;
+    tr.querySelector('.row-total').textContent = fmt(area*price);
+  });
+  const dv = parseFloat(document.getElementById('t-disc-val').value)||0;
+  const dt = document.getElementById('t-disc-type').value;
+  let discAmt = dt==='percent' ? sub*dv/100 : dv;
+  if(discAmt>sub) discAmt=sub;
+  const afterDisc = sub-discAmt;
+  const vr = parseFloat(document.getElementById('t-vat').value)||0;
+  const vatAmt = afterDisc*vr/100;
+  const total = afterDisc+vatAmt;
+  document.getElementById('t-subtotal').textContent = fmt(sub);
+  document.getElementById('t-disc-amt').textContent = fmt(discAmt);
+  document.getElementById('t-vat-amt').textContent = fmt(vatAmt);
+  document.getElementById('t-total').textContent = fmt(total);
+  updatePaymentTotals();
+}
+// ================================================================
+// PAYMENT MILESTONES
+// ================================================================
+const MILESTONE_LABELS = ['הזמנה','גמר תשתיות והספקת עץ','תחילת עבודה','גמר ביצוע','סיום עבודה','מקדמה','יתרה'];
+function defaultMilestones() {
+  return [
+    { label: 'הזמנה', pct: 35 },
+    { label: 'גמר תשתיות והספקת עץ', pct: 35 },
+    { label: 'גמר ביצוע', pct: 30 }
+  ];
+}
+function getQuoteTotal() {
+  let sub=0;
+  document.querySelectorAll('#items-tbody tr').forEach(tr=>{
+    if(tr.dataset.type!=='section') {
+      const inputs=tr.querySelectorAll('input');
+      sub+=(parseFloat(inputs[2].value)||0)*(parseFloat(inputs[3].value)||0);
+    }
+  });
+  const dv=parseFloat(document.getElementById('t-disc-val').value)||0;
+  const dt=document.getElementById('t-disc-type').value;
+  let disc=dt==='percent'?sub*dv/100:dv; if(disc>sub) disc=sub;
+  const after=sub-disc;
+  const vr=parseFloat(document.getElementById('t-vat').value)||0;
+  return after+after*vr/100;
+}
+function addPaymentRow(label='', pct='') {
+  const total = getQuoteTotal();
+  const tbody = document.getElementById('payment-tbody');
+  const tr = document.createElement('tr');
+  const amt = pct ? (parseFloat(pct)||0)/100*total : 0;
+  tr.innerHTML = `
+    <td style="padding:6px 8px">
+      <input list="milestone-labels" value="${label}" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-family:inherit;font-size:13px"
+        onchange="updatePaymentTotals()" oninput="updatePaymentTotals()">
+    </td>
+    <td style="padding:6px 8px">
+      <input type="number" min="0" max="100" step="1" value="${pct}" style="width:70px;border:1px solid #e2e8f0;border-radius:6px;padding:5px 8px;font-family:inherit;font-size:13px;text-align:center"
+        oninput="updatePaymentTotals()">
+    </td>
+    <td style="padding:6px 8px;text-align:left;direction:ltr;font-size:13px;color:#1a3a2a;font-weight:600" class="pay-amt">${fmt(amt)}</td>
+    <td style="padding:6px 8px;text-align:center">
+      <button onclick="this.closest('tr').remove();updatePaymentTotals()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;padding:2px 6px" title="מחק שלב">×</button>
+    </td>`;
+  tbody.appendChild(tr);
+  updatePaymentTotals();
+}
+function setPaymentMilestones(milestones) {
+  document.getElementById('payment-tbody').innerHTML = '';
+  (milestones||defaultMilestones()).forEach(m=>addPaymentRow(m.label, m.pct));
+}
+function getPaymentMilestones() {
+  const rows = document.querySelectorAll('#payment-tbody tr');
+  return Array.from(rows).map(tr=>{
+    const inputs = tr.querySelectorAll('input');
+    return { label: inputs[0].value.trim(), pct: parseFloat(inputs[1].value)||0 };
+  });
+}
+function updatePaymentTotals() {
+  const total = getQuoteTotal();
+  let sumPct = 0;
+  document.querySelectorAll('#payment-tbody tr').forEach(tr=>{
+    const pct = parseFloat(tr.querySelectorAll('input')[1].value)||0;
+    sumPct += pct;
+    tr.querySelector('.pay-amt').textContent = fmt(pct/100*total);
+  });
+  document.getElementById('pay-pct-total').textContent = sumPct + '%';
+  document.getElementById('pay-sum-total').textContent = fmt(sumPct/100*total);
+  const warn = document.getElementById('pay-warning');
+  if(sumPct !== 100) { warn.style.display='inline'; warn.textContent = `⚠ סכום האחוזים ${sumPct}% (צריך להיות 100%)`; }
+  else warn.style.display='none';
+}
+function buildPaymentPreviewHTML(q) {
+  const milestones = q.paymentMilestones;
+  if(!milestones||!milestones.length) return `<div style="font-size:12px;color:#475569">-</div>`;
+  const total = q.total||0;
+  const rows = milestones.map(m=>`
+    <tr>
+      <td style="padding:3px 6px;font-size:11.5px;color:#334155">${m.label}</td>
+      <td style="padding:3px 6px;font-size:11.5px;color:#334155;text-align:center">${m.pct}%</td>
+      <td style="padding:3px 6px;font-size:11.5px;color:#1a3a2a;font-weight:600;text-align:left;direction:ltr">${fmt(m.pct/100*total)}</td>
+    </tr>`).join('');
+  return `<table style="width:100%;border-collapse:collapse;margin-top:4px">
+    <thead><tr style="background:#f0f9f4">
+      <th style="padding:4px 6px;font-size:11px;font-weight:700;color:#1a3a2a;text-align:right">שלב</th>
+      <th style="padding:4px 6px;font-size:11px;font-weight:700;color:#1a3a2a;text-align:center">%</th>
+      <th style="padding:4px 6px;font-size:11px;font-weight:700;color:#1a3a2a;text-align:left">סכום</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+function getFormData() {
+  const items = [];
+  document.querySelectorAll('#items-tbody tr').forEach(tr=>{
+    if(tr.dataset.type==='section') {
+      items.push({ isSection:true, title: tr.querySelector('input').value.trim() });
+    } else {
+      const inputs = tr.querySelectorAll('input');
+      items.push({ title:inputs[0].value.trim(), detail:inputs[1].value.trim(), area:parseFloat(inputs[2].value)||0, price:parseFloat(inputs[3].value)||0 });
+    }
+  });
+  let sub=0; items.filter(i=>!i.isSection).forEach(i=>sub+=i.area*i.price);
+  const dv=parseFloat(document.getElementById('t-disc-val').value)||0;
+  const dt=document.getElementById('t-disc-type').value;
+  let discAmt=dt==='percent'?sub*dv/100:dv; if(discAmt>sub) discAmt=sub;
+  const afterDisc=sub-discAmt;
+  const vr=parseFloat(document.getElementById('t-vat').value)||0;
+  const vatAmt=afterDisc*vr/100;
+  return {
+    number: document.getElementById('f-number').value.trim(),
+    status: document.getElementById('f-status').value,
+    date: document.getElementById('f-date').value,
+    expiry: document.getElementById('f-expiry').value,
+    clientName: document.getElementById('f-client-name').value.trim(),
+    clientPhone: document.getElementById('f-client-phone').value.trim(),
+    clientAddress: document.getElementById('f-client-address').value.trim(),
+    clientEmail: document.getElementById('f-client-email').value.trim(),
+    projectDesc: document.getElementById('f-project-desc').value.trim(),
+    paymentMilestones: getPaymentMilestones(),
+    notes: document.getElementById('f-notes').value.trim(),
+    discVal:dv, discType:dt, vatRate:vr,
+    subtotal:sub, discAmt, vatAmt, total:afterDisc+vatAmt,
+    tlStart: document.getElementById('tl-start').value,
+    tlDuration: document.getElementById('tl-duration').value,
+    tlEnd: document.getElementById('tl-end').value,
+    items
+  };
+}
+function saveQuote(andPreview) {
+  const data = getFormData();
+  if (currentEditId) {
+    const idx = quotes.findIndex(q=>q.id===currentEditId);
+    if(idx!==-1) quotes[idx] = {...quotes[idx],...data};
+  } else {
+    const q = {id:genId(),...data}; quotes.push(q); currentEditId=q.id;
+  }
+  localStorage.setItem('tw_quotes', JSON.stringify(quotes));
+  toast('נשמר ✓');
+  if (andPreview) openPreview(currentEditId);
+  else showList();
+}
+function saveAndPreview() { saveQuote(true); }
+
+// ================================================================
+// DUPLICATE & DELETE
+// ================================================================
+function duplicateQuote(id) {
+  const q = quotes.find(x=>x.id===id); if(!q) return;
+  const nq = {...JSON.parse(JSON.stringify(q)), id:genId(), number:genNum(), status:'draft', date:today()};
+  delete nq.orderNumber;
+  quotes.push(nq);
+  localStorage.setItem('tw_quotes', JSON.stringify(quotes));
+  toast('שוכפל ✓');
+  renderList();
+}
+let delTargetId=null;
+function openDeleteModal(id) { delTargetId=id; openModal('modal-delete'); }
+document.getElementById('btn-confirm-delete').onclick = function() {
+  quotes=quotes.filter(q=>q.id!==delTargetId);
+  localStorage.setItem('tw_quotes', JSON.stringify(quotes));
+  closeModal('modal-delete'); toast('נמחק'); renderList();
+};
+
+// ================================================================
+// CONVERT
+// ================================================================
+let convertTargetId=null;
+function openConvertModal(id) { convertTargetId=id; document.getElementById('order-num-input').value=''; openModal('modal-convert'); }
+document.getElementById('btn-confirm-convert').onclick = function() {
+  const idx=quotes.findIndex(q=>q.id===convertTargetId); if(idx===-1) return;
+  quotes[idx].status='order';
+  const on=document.getElementById('order-num-input').value.trim();
+  if(on) quotes[idx].orderNumber=on;
+  localStorage.setItem('tw_quotes', JSON.stringify(quotes));
+  closeModal('modal-convert'); toast('הומרה להזמנת עבודה ✓');
+  if(currentPreviewId===convertTargetId) openPreview(convertTargetId); else renderList();
+};
+
+// ================================================================
+// MODALS
+// ================================================================
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ================================================================
+// PREVIEW
+// ================================================================
+function openPreview(id) {
+  const q=quotes.find(x=>x.id===id); if(!q) return;
+  currentPreviewId=id; currentEditId=id;
+  buildPreviewDoc(q);
+  const label = 'תצוגה מקדימה – ' + (q.number||'') + (q.clientName ? ' / ' + q.clientName : '');
+  screenLabels['screen-preview'] = label;
+  showScreen('screen-preview');
+}
+function buildPreviewDoc(q) {
+  const s = settings;
+  const isOrder = q.status==='order';
+  const logoSrc = s.logo||'image2.png';
+  const companyLines = [s.phone?'טל: '+s.phone:'', s.email||'', s.address||'', s.regno?'ח.פ: '+s.regno:''].filter(Boolean).join('  |  ');
+  const remarks = (s.remarks||'').split('\n').filter(r=>r.trim());
+  const remarkRows = remarks.map(r=>`<div class="doc-remark-item">${r}</div>`).join('');
+  // items
+  let itemsHtml = '';
+  let rowNum = 0;
+  (q.items||[]).forEach(it=>{
+    if(it.isSection) {
+      itemsHtml += `<tr><td colspan="5" style="background:#f0fdf4;font-weight:700;color:#1a3a2a;padding:8px 10px">${it.title}</td></tr>`;
+    } else {
+      rowNum++;
+      const lineTotal = (it.area||0)*(it.price||0);
+      itemsHtml += `<tr>
+        <td style="text-align:center;color:#64748b;font-size:12px">${rowNum}</td>
+        <td><strong>${it.title||''}</strong></td>
+        <td style="color:#475569">${it.detail||''}</td>
+        <td class="num">${it.area||''}</td>
+        <td class="num">${it.price?fmt(it.price):''}</td>
+        <td class="num"><strong>${fmt(lineTotal)}</strong></td>
+      </tr>`;
+    }
+  });
+  const discRow = q.discAmt>0?`<tr><td style="color:#64748b">הנחה</td><td class="num">-${fmt(q.discAmt)}</td></tr>`:'';
+  const vatRow = q.vatRate>0?`<tr><td style="color:#64748b">מע"מ ${q.vatRate}%</td><td class="num">${fmt(q.vatAmt)}</td></tr>`:'';
+  const tlItems = [
+    {label:'הזמנה', val:fmtDate(q.tlOrder)},
+    {label:'תחילת עבודה', val:fmtDate(q.tlStart)},
+    {label:'זמן משוער', val:q.tlDuration||''},
+    {label:'סיום עבודה', val:fmtDate(q.tlEnd)},
+    {label:'גמר ביצוע', val:fmtDate(q.tlFinish)},
+  ];
+  const tlHtml = tlItems.some(t=>t.val) ? `
+    <div class="doc-timeline">
+      ${tlItems.map(t=>`<div class="doc-tl-item"><div class="doc-tl-label">${t.label}</div><div class="doc-tl-val">${t.val||'—'}</div></div>`).join('')}
+    </div>` : '';
+  const notesHtml = q.notes ? `<div style="margin-bottom:14px;font-size:12.5px;color:#475569;border-top:1px solid #e2e8f0;padding-top:12px"><strong style="color:#1a3a2a">הערות נוספות:</strong><br><span style="white-space:pre-wrap">${q.notes}</span></div>` : '';
+
+  document.getElementById('quote-doc').innerHTML = `
+    <div class="doc-header">
+      <div>
+        <img src="${logoSrc}" class="doc-logo" alt="לוגו" onerror="this.style.display='none'">
+      </div>
+      <div class="doc-company-info">
+        <strong style="font-size:14px;color:#1a3a2a">${s.company||''}</strong><br>
+        ${companyLines}
+      </div>
+    </div>
+
+    <div class="doc-title-section">
+      <div>
+        <h2>${isOrder?'הזמנת עבודה':'הצעת מחיר'}${isOrder&&q.orderNumber?` <span class="doc-order-badge">מס' ${q.orderNumber}</span>`:''}</h2>
+        ${q.projectDesc?`<div style="color:#64748b;font-size:14px;margin-top:4px">${q.projectDesc}</div>`:''}
+      </div>
+      <div class="doc-meta-box">
+        <div class="doc-meta-row"><span class="doc-meta-label">מספר הצעה:</span> <strong>${q.number||'—'}</strong></div>
+        <div class="doc-meta-row"><span class="doc-meta-label">תאריך:</span> ${fmtDate(q.date)}</div>
+        ${q.expiry?`<div class="doc-meta-row"><span class="doc-meta-label">תוקף:</span> ${fmtDate(q.expiry)}</div>`:''}
+      </div>
+    </div>
+
+    <div class="doc-client-section">
+      <span class="doc-client-label">לכב'</span><span class="doc-client-val"><strong>${q.clientName||''}</strong></span>
+      ${q.clientAddress?`<span class="doc-client-label">כתובת</span><span class="doc-client-val">${q.clientAddress}</span>`:''}
+      ${q.clientPhone?`<span class="doc-client-label">טלפון</span><span class="doc-client-val">${q.clientPhone}</span>`:''}
+      ${q.clientEmail?`<span class="doc-client-label">אימייל</span><span class="doc-client-val">${q.clientEmail}</span>`:''}
+    </div>
+
+    <table class="doc-items-table">
+      <thead>
+        <tr>
+          <th style="width:32px">#</th>
+          <th style="width:130px">תיאור</th>
+          <th>פירוט</th>
+          <th style="width:90px;text-align:left">שטח / יחידות</th>
+          <th style="width:105px;text-align:left">מחיר</th>
+          <th style="width:105px;text-align:left">סכום</th>
+        </tr>
+      </thead>
+      <tbody>${itemsHtml}</tbody>
+    </table>
+
+    <div class="doc-bottom">
+      <div class="doc-totals-wrap">
+        <table class="doc-totals-table">
+          <tr><td style="color:#64748b">סכום לפני הנחה</td><td class="num">${fmt(q.subtotal)}</td></tr>
+          ${discRow}${vatRow}
+          <tr class="grand"><td>סה"כ לתשלום</td><td class="num">${fmt(q.total)}</td></tr>
+        </table>
+      </div>
+      <div class="doc-payment">
+        <h4>תנאי תשלום</h4>
+        ${buildPaymentPreviewHTML(q)}
+        <div style="margin-top:10px">
+          <h4>פרטי בנק</h4>
+          <div class="doc-bank">
+            <strong>${s.bankName||''}</strong><br>
+            סניף ${s.bankBranch||''} | חשבון ${s.bankAccount||''}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    ${tlHtml}
+
+    ${remarkRows?`<div class="doc-remarks"><h4>הערות</h4>${remarkRows}</div>`:''}
+    ${notesHtml}
+
+    <div class="doc-sig-section">
+      <div class="doc-sig-box">
+        <div class="doc-sig-line">חתימת הלקוח</div>
+      </div>
+      <div class="doc-sig-box">
+        <div class="doc-sig-line">חותמת וחתימת החברה</div>
+      </div>
+    </div>
+    <div class="doc-footer">${s.company||''} ${s.regno?'| ח.פ '+s.regno:''}</div>
+  `;
+}
+
+// ================================================================
+// PDF
+// ================================================================
+async function exportPDF() {
+  const q = quotes.find(x=>x.id===currentPreviewId);
+  const name = `הצעת_מחיר_${(q&&q.number)||currentPreviewId}.pdf`;
+  const el = document.getElementById('quote-doc');
+  const canvas = await html2canvas(el,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff'});
+  const {jsPDF} = window.jspdf;
+  const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pw = pdf.internal.pageSize.getWidth()-20;
+  const ph = pdf.internal.pageSize.getHeight()-20;
+  const ratio = canvas.width/canvas.height;
+  const imgH = pw/ratio;
+  if(imgH<=ph) {
+    pdf.addImage(canvas.toDataURL('image/png'),'PNG',10,10,pw,imgH);
+  } else {
+    const pagePixH = ph*(canvas.width/pw);
+    let srcY=0;
+    while(srcY<canvas.height) {
+      const sliceH=Math.min(pagePixH,canvas.height-srcY);
+      const sc=document.createElement('canvas'); sc.width=canvas.width; sc.height=sliceH;
+      sc.getContext('2d').drawImage(canvas,0,srcY,canvas.width,sliceH,0,0,canvas.width,sliceH);
+      if(srcY>0) pdf.addPage();
+      pdf.addImage(sc.toDataURL('image/png'),'PNG',10,10,pw,sliceH*pw/canvas.width);
+      srcY+=sliceH;
+    }
+  }
+  pdf.save(name);
+}
+
+// ================================================================
+// SHARE HELPERS
+// ================================================================
+async function buildPdfBlob() {
+  const q = quotes.find(x=>x.id===currentPreviewId);
+  const name = `הצעת_מחיר_${(q&&q.number)||currentPreviewId}.pdf`;
+  const el = document.getElementById('quote-doc');
+  const canvas = await html2canvas(el,{scale:2,useCORS:true,allowTaint:true,backgroundColor:'#ffffff'});
+  const {jsPDF} = window.jspdf;
+  const pdf = new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pw = pdf.internal.pageSize.getWidth()-20;
+  const ph = pdf.internal.pageSize.getHeight()-20;
+  const ratio = canvas.width/canvas.height;
+  const imgH = pw/ratio;
+  if(imgH<=ph) {
+    pdf.addImage(canvas.toDataURL('image/png'),'PNG',10,10,pw,imgH);
+  } else {
+    const pagePixH = ph*(canvas.width/pw);
+    let srcY=0;
+    while(srcY<canvas.height) {
+      const sliceH=Math.min(pagePixH,canvas.height-srcY);
+      const sc=document.createElement('canvas'); sc.width=canvas.width; sc.height=sliceH;
+      sc.getContext('2d').drawImage(canvas,0,srcY,canvas.width,sliceH,0,0,canvas.width,sliceH);
+      if(srcY>0) pdf.addPage();
+      pdf.addImage(sc.toDataURL('image/png'),'PNG',10,10,pw,sliceH*pw/canvas.width);
+      srcY+=sliceH;
+    }
+  }
+  const blob = pdf.output('blob');
+  return { blob, name };
+}
+
+async function shareWhatsApp() {
+  const q = quotes.find(x=>x.id===currentPreviewId);
+  const msg = `שלום ${q&&q.clientName?q.clientName:''},\nמצורפת הצעת מחיר מטאץ ווד עיצוב חוץ.\n\nמספר הצעה: ${q&&q.number||''}\nסכום: ${fmt(q&&q.total||0)}\n\nבברכה,\nטאץ' ווד עיצוב נוף`;
+
+  // נסה Web Share API (עובד בדפדפנים מודרניים – שולח קובץ ישירות)
+  if (navigator.share && navigator.canShare) {
+    try {
+      toast('מכין PDF לשליחה...');
+      const {blob, name} = await buildPdfBlob();
+      const file = new File([blob], name, {type:'application/pdf'});
+      if (navigator.canShare({files:[file]})) {
+        await navigator.share({files:[file], title:'הצעת מחיר', text: msg});
+        return;
+      }
+    } catch(e) { if(e.name==='AbortError') return; }
+  }
+
+  // Fallback: הורד PDF + פתח וואטסאפ עם הודעה
+  toast('מוריד PDF... לאחר מכן עבור לוואטסאפ וצרף את הקובץ');
+  const {blob, name} = await buildPdfBlob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=name; a.click();
+  URL.revokeObjectURL(url);
+  // פתח וואטסאפ עם מספר הלקוח אם קיים
+  const phone = (q&&q.clientPhone||'').replace(/\D/g,'').replace(/^0/,'972');
+  const waUrl = phone
+    ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  setTimeout(()=>window.open(waUrl,'_blank'), 800);
+}
+
+async function shareEmail() {
+  const q = quotes.find(x=>x.id===currentPreviewId);
+  toast('מוריד PDF... לאחר מכן צרף אותו למייל שייפתח');
+  const {blob, name} = await buildPdfBlob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download=name; a.click();
+  URL.revokeObjectURL(url);
+  const subject = encodeURIComponent(`הצעת מחיר ${q&&q.number||''} – טאץ' ווד עיצוב נוף`);
+  const body = encodeURIComponent(
+    `שלום ${q&&q.clientName||''},\n\nמצורפת הצעת המחיר שלנו מספר ${q&&q.number||''} בסך ${fmt(q&&q.total||0)}.\nאנא עיין/י בקובץ המצורף ואנו עומדים לרשותך לכל שאלה.\n\nבברכה,\n${settings.company||"טאץ' ווד עיצוב נוף"}\n${settings.phone||''}`
+  );
+  const to = encodeURIComponent(q&&q.clientEmail||'');
+  setTimeout(()=>window.open(`mailto:${to}?subject=${subject}&body=${body}`,'_blank'), 800);
+}
+
+// ================================================================
+// TOAST
+// ================================================================
+function toast(msg) {
+  let t=document.getElementById('_toast');
+  if(!t){t=document.createElement('div');t.id='_toast';Object.assign(t.style,{position:'fixed',bottom:'24px',left:'50%',transform:'translateX(-50%)',background:'#1a3a2a',color:'white',padding:'10px 24px',borderRadius:'8px',fontSize:'14px',fontWeight:'600',zIndex:'9999',transition:'opacity .3s',opacity:'0',borderTop:'3px solid #d4af6a'});document.body.appendChild(t);}
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._t); t._t=setTimeout(()=>t.style.opacity='0',2500);
+}
+
+// ================================================================
+// PROFIT ANALYSIS
+// ================================================================
+const DEFAULT_MATERIALS = {
+  aluminum: [
+    { title: 'פרופיל אלומיניום 120×40', unit: 'מ"ל', price: 0 },
+    { title: 'פרופיל אלומיניום 100×40', unit: 'מ"ל', price: 0 },
+    { title: 'סרגל הצללה 40×20',        unit: 'מ"ל', price: 0 },
+    { title: 'עמוד אלומיניום 100×100',  unit: 'מ"ל', price: 0 },
+    { title: 'סנטף BH שקוף',            unit: 'מ"ר', price: 0 },
+    { title: 'בורג נירוסטה',            unit: 'יח׳', price: 0 },
+  ],
+  wood: [
+    { title: 'אריחי דק במבוק DASSO', unit: 'מ"ר',  price: 0 },
+    { title: 'לוח עץ אורן מחוץ',     unit: 'מ"ל',  price: 0 },
+    { title: 'קורת עץ 200×150',      unit: 'מ"ל',  price: 0 },
+    { title: 'צבע מגן עץ',           unit: 'ליטר', price: 0 },
+  ],
+  misc: [
+    { title: 'בטון',            unit: 'מ"ק', price: 0 },
+    { title: 'עפר מילוי',       unit: 'מ"ק', price: 0 },
+    { title: 'כלי קיבול פסולת', unit: 'יח׳', price: 0 },
+  ]
+};
+const _rawMat = JSON.parse(localStorage.getItem('tw_materials') || 'null');
+let MATERIALS = (_rawMat && typeof _rawMat === 'object' && !Array.isArray(_rawMat))
+  ? _rawMat
+  : { aluminum: DEFAULT_MATERIALS.aluminum.map(m=>({...m})), wood: DEFAULT_MATERIALS.wood.map(m=>({...m})), misc: DEFAULT_MATERIALS.misc.map(m=>({...m})) };
+
+const DEFAULT_FIXED_COSTS = {
+  workingDaysPerMonth: 22,
+  items: [
+    { label: 'שכר עבודה עלות מעביד', monthly: 0 },
+    { label: 'שכר דירה',             monthly: 0 },
+    { label: 'רכבים',                monthly: 0 },
+    { label: 'ביטוחים',              monthly: 0 },
+    { label: 'רישיונות',             monthly: 0 },
+    { label: 'רואה חשבון',           monthly: 0 },
+    { label: 'עמלות בנקים',          monthly: 0 },
+  ]
+};
+let FIXED_COSTS = JSON.parse(localStorage.getItem('tw_fixed_costs') || 'null') || JSON.parse(JSON.stringify(DEFAULT_FIXED_COSTS));
+
+function calcDailyCost() {
+  const total = (FIXED_COSTS.items||[]).reduce((s,i) => s + (parseFloat(i.monthly)||0), 0);
+  return total / (parseInt(FIXED_COSTS.workingDaysPerMonth)||22);
+}
+
+function parseDays(str) {
+  const n = parseInt(str);
+  return isNaN(n) ? 0 : n;
+}
+
+let currentProfitId = null;
+
+function openProfit(id) {
+  const q = quotes.find(x => x.id === id); if (!q) return;
+  currentProfitId = id;
+  document.getElementById('profit-subtitle').textContent =
+    'הצעה ' + (q.number||'') + (q.clientName ? ' — ' + q.clientName : '') + ' | הכנסה (לפני מע"מ): ' + fmt(q.subtotal - (q.discAmt||0));
+
+  const p = q.profit || { materials:[], subcontractors:[], variable:[], fixedExtra:[], projectDays: null };
+
+  // חומרי גלם
+  document.getElementById('mat-tbody').innerHTML = '';
+  (p.materials||[]).forEach(r => addMaterialRow(r));
+  if (!(p.materials||[]).length) addMaterialRow();
+
+  // קבלני משנה + הוצאות משתנות
+  ['sub','var'].forEach(k => {
+    const key = k==='sub'?'subcontractors':'variable';
+    document.getElementById(k+'-tbody').innerHTML = '';
+    (p[key]||[]).forEach(r => addCostRow(k+'-tbody', k+'-total', r));
+    if (!(p[key]||[]).length) addCostRow(k+'-tbody', k+'-total');
+  });
+
+  // הוצאות קבועות — הקצאה אוטומטית
+  const daily = calcDailyCost();
+  document.getElementById('fix-daily-display').textContent = fmt(daily);
+  const savedDays = p.projectDays != null ? p.projectDays : parseDays(q.tlDuration||'');
+  document.getElementById('fix-project-days').value = savedDays;
+  document.getElementById('fix-tbody').innerHTML = '';
+  (p.fixedExtra||[]).forEach(r => addCostRow('fix-tbody','fix-extra-total', r));
+  calcFixAllocation();
+
+  calcProfitSummary(q);
+  screenLabels['screen-profit'] = 'ניתוח רווחיות – ' + (q.number||'');
+  showScreen('screen-profit');
+}
+
+function calcFixAllocation() {
+  const daily = calcDailyCost();
+  const days = parseInt(document.getElementById('fix-project-days')?.value)||0;
+  const allocation = daily * days;
+  document.getElementById('fix-allocation').textContent = fmt(allocation);
+  calcProfitSummary();
+}
+
+function addMaterialRow(item) {
+  const tbody = document.getElementById('mat-tbody');
+  const tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid #f1f5f9';
+  // opts unused — datalist mat-list handles suggestions
+  tr.innerHTML = `
+    <td style="padding:6px 8px">
+      <input list="mat-list" value="${esc(item?.title||'')}" placeholder="בחר חומר..." style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px" oninput="fillMatPrice(this);calcProfitSummary()">
+    </td>
+    <td style="padding:6px 8px">
+      <input type="number" min="0" step="any" value="${item?.qty||''}" placeholder="0" style="width:80px;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px" oninput="calcMatRow(this);calcProfitSummary()">
+    </td>
+    <td style="padding:6px 8px">
+      <input type="number" min="0" step="any" value="${item?.unitPrice||''}" placeholder="0.00" style="width:100px;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px" oninput="calcMatRow(this);calcProfitSummary()">
+    </td>
+    <td style="padding:6px 8px;text-align:left;direction:ltr;font-weight:600;color:#1a3a2a" class="mat-row-total">${item?.qty&&item?.unitPrice?fmt((item.qty||0)*(item.unitPrice||0)):'₪0.00'}</td>
+    <td style="padding:6px 8px;text-align:center">
+      <button onclick="this.closest('tr').remove();calcProfitSummary()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:18px">×</button>
+    </td>`;
+  tbody.appendChild(tr);
+}
+
+function fillMatPrice(input) {
+  const all = ['aluminum','wood','misc'].flatMap(g => MATERIALS[g]||[]);
+  const match = all.find(m => m.title === input.value);
+  if (!match) return;
+  const tr = input.closest('tr');
+  const priceInput = tr.querySelectorAll('input')[2];
+  if (!priceInput.value) priceInput.value = match.price || '';
+  calcMatRow(priceInput);
+}
+
+function calcMatRow(input) {
+  const tr = input.closest('tr');
+  const inputs = tr.querySelectorAll('input');
+  const qty = parseFloat(inputs[1].value)||0;
+  const price = parseFloat(inputs[2].value)||0;
+  tr.querySelector('.mat-row-total').textContent = fmt(qty*price);
+  updateSectionTotal('mat-tbody','mat-total');
+}
+
+function addCostRow(tbodyId, totalId, item) {
+  const tbody = document.getElementById(tbodyId);
+  const tr = document.createElement('tr');
+  tr.style.borderBottom = '1px solid #f1f5f9';
+  tr.innerHTML = `
+    <td style="padding:6px 8px">
+      <input type="text" value="${esc(item?.label||'')}" placeholder="תיאור..." style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px">
+    </td>
+    <td style="padding:6px 8px">
+      <input type="number" min="0" step="any" value="${item?.amount||''}" placeholder="0.00" style="width:120px;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px" oninput="updateSectionTotal('${tbodyId}','${totalId}');calcProfitSummary()">
+    </td>
+    <td style="padding:6px 8px;text-align:center">
+      <button onclick="this.closest('tr').remove();updateSectionTotal('${tbodyId}','${totalId}');calcProfitSummary()" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:18px">×</button>
+    </td>`;
+  tbody.appendChild(tr);
+}
+
+function updateSectionTotal(tbodyId, totalId) {
+  let sum = 0;
+  document.querySelectorAll('#'+tbodyId+' tr').forEach(tr => {
+    const inputs = tr.querySelectorAll('input');
+    const last = inputs[inputs.length-1];
+    sum += parseFloat(last?.value)||0;
+  });
+  const el = document.getElementById(totalId);
+  if (el) el.textContent = fmt(sum);
+  return sum;
+}
+
+function getSectionSum(tbodyId) {
+  let sum = 0;
+  document.querySelectorAll('#'+tbodyId+' tr').forEach(tr => {
+    const inputs = tr.querySelectorAll('input');
+    if (tbodyId === 'mat-tbody') {
+      const qty = parseFloat(inputs[1]?.value)||0;
+      const price = parseFloat(inputs[2]?.value)||0;
+      sum += qty*price;
+    } else {
+      sum += parseFloat(inputs[inputs.length-1]?.value)||0;
+    }
+  });
+  return sum;
+}
+
+function getFixTotal() {
+  const daily = calcDailyCost();
+  const days = parseInt(document.getElementById('fix-project-days')?.value)||0;
+  const allocation = daily * days;
+  const extra = getSectionSum('fix-tbody');
+  const total = allocation + extra;
+  if (document.getElementById('fix-total')) document.getElementById('fix-total').textContent = fmt(total);
+  return total;
+}
+
+function calcProfitSummary(q) {
+  if (!q) q = quotes.find(x => x.id === currentProfitId);
+  if (!q) return;
+  const revenue = (q.subtotal||0) - (q.discAmt||0);
+  const mat = getSectionSum('mat-tbody');
+  const sub = getSectionSum('sub-tbody');
+  const varr = getSectionSum('var-tbody');
+  const fix = getFixTotal();
+  const totalCost = mat+sub+varr+fix;
+  const profit = revenue - totalCost;
+  const margin = revenue ? (profit/revenue*100) : 0;
+
+  updateSectionTotal('mat-tbody','mat-total');
+  updateSectionTotal('sub-tbody','sub-total');
+  updateSectionTotal('var-tbody','var-total');
+
+  document.getElementById('ps-revenue').textContent = fmt(revenue);
+  document.getElementById('ps-mat').textContent = fmt(mat);
+  document.getElementById('ps-sub').textContent = fmt(sub);
+  document.getElementById('ps-var').textContent = fmt(varr);
+  document.getElementById('ps-fix').textContent = fmt(fix);
+  const profitEl = document.getElementById('ps-profit');
+  const marginEl = document.getElementById('ps-margin');
+  profitEl.textContent = fmt(profit);
+  profitEl.style.color = profit >= 0 ? '#16a34a' : '#dc2626';
+  marginEl.textContent = margin.toFixed(1) + '%';
+  marginEl.style.color = margin >= 20 ? '#16a34a' : margin >= 0 ? '#d97706' : '#dc2626';
+}
+
+function saveProfit() {
+  if (!currentProfitId) return;
+  const idx = quotes.findIndex(q => q.id === currentProfitId); if (idx === -1) return;
+  const materials = Array.from(document.querySelectorAll('#mat-tbody tr')).map(tr => {
+    const inputs = tr.querySelectorAll('input');
+    return { title: inputs[0].value.trim(), qty: parseFloat(inputs[1].value)||0, unitPrice: parseFloat(inputs[2].value)||0 };
+  }).filter(r => r.title);
+  const readCostRows = tbodyId => Array.from(document.querySelectorAll('#'+tbodyId+' tr')).map(tr => {
+    const inputs = tr.querySelectorAll('input');
+    return { label: inputs[0].value.trim(), amount: parseFloat(inputs[1].value)||0 };
+  }).filter(r => r.label);
+  quotes[idx].profit = {
+    materials,
+    subcontractors: readCostRows('sub-tbody'),
+    variable: readCostRows('var-tbody'),
+    fixedExtra: readCostRows('fix-tbody'),
+    projectDays: parseInt(document.getElementById('fix-project-days')?.value)||0,
+  };
+  localStorage.setItem('tw_quotes', JSON.stringify(quotes));
+  toast('נשמר ✓');
+}
+
+// ================================================================
+// INIT
+// ================================================================
+// אתחול datalist חומרים
+(function() {
+  const dl = document.getElementById('mat-list');
+  dl.innerHTML = ['aluminum','wood','misc'].flatMap(g => MATERIALS[g]||[]).map(m => `<option value="${esc(m.title)}">`).join('');
+})();
+renderList();
+</script>
+</body>
+</html>
