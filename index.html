@@ -601,8 +601,12 @@ textarea { resize: vertical; min-height: 80px; }
       <h2 style="font-size:22px;font-weight:700;color:#1a3a2a">הגדרות חברה</h2>
     </div>
     <div class="card">
-      <div class="card-title">💾 גיבוי וסנכרון בין מכשירים</div>
-      <p style="font-size:13px;color:#64748b;margin:0 0 12px">ייצא קובץ גיבוי ממכשיר אחד, ופתח ייבא אותו במכשיר השני.</p>
+      <div class="card-title">💾 סנכרון בין מכשירים</div>
+      <p style="font-size:13px;color:#64748b;margin:0 0 12px">כדי שהמכשיר השני יראה את אותם נתונים, העתק את הקישור ופתח אותו בטלפון.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn btn-primary" onclick="copySyncLink()">🔗 העתק קישור סנכרון</button>
+      </div>
+      <p style="font-size:13px;color:#64748b;margin:0 0 12px">או לגבות לקובץ:</p>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-primary" onclick="exportAllData()">⬇ ייצא נתונים</button>
         <button class="btn" style="background:#f1f5f9;color:#1a3a2a" onclick="document.getElementById('import-file').click()">⬆ ייבא נתונים</button>
@@ -822,11 +826,6 @@ textarea { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
-<div id="signin-overlay" style="display:none;position:fixed;inset:0;z-index:99999;background:#f8fafc;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:Heebo,sans-serif">
-  <div style="font-size:20px;font-weight:700;color:#1a3a2a">טאץ' ווד - הצעות מחיר</div>
-  <div style="font-size:14px;color:#64748b">התחבר עם חשבון Google כדי לסנכרן בין המכשירים</div>
-  <button onclick="cloudSignIn()" style="background:#1a3a2a;color:white;border:none;border-radius:8px;padding:12px 24px;font-size:15px;cursor:pointer">התחבר עם Google</button>
-</div>
 <script>
 (function(){
   const FB_CONFIG = {
@@ -841,21 +840,31 @@ textarea { resize: vertical; min-height: 80px; }
   const FB = 'https://www.gstatic.com/firebasejs/10.12.2/';
   const _setItem = Storage.prototype.setItem;
   const _getItem = Storage.prototype.getItem;
-  const cloud = { db: null, auth: null, fs: null, authMod: null, user: null, provider: null };
+  const params = new URLSearchParams(location.search);
+  let syncKey = params.get('k') || _getItem.call(localStorage, 'tw_sync_key');
+  if (!syncKey) {
+    syncKey = Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('');
+  }
+  _setItem.call(localStorage, 'tw_sync_key', syncKey);
+  const cloud = { db: null, fs: null };
 
   Storage.prototype.setItem = function(k, v) {
     _setItem.call(this, k, v);
-    if (this === localStorage && CLOUD_KEYS.includes(k) && cloud.user) cloudSave(k, v);
+    if (this === localStorage && CLOUD_KEYS.includes(k) && cloud.db) cloudSave(k, v);
   };
 
+  function docRef(k) {
+    return cloud.fs.doc(cloud.db, 'sync', syncKey, 'data', k);
+  }
+
   async function cloudSave(k, v) {
-    await cloud.fs.setDoc(cloud.fs.doc(cloud.db, 'users', cloud.user.uid, 'data', k), { value: v, updated: Date.now() });
+    await cloud.fs.setDoc(docRef(k), { value: v, updated: Date.now() });
   }
 
   async function cloudPull() {
     let changed = false;
     for (const k of CLOUD_KEYS) {
-      const snap = await cloud.fs.getDoc(cloud.fs.doc(cloud.db, 'users', cloud.user.uid, 'data', k));
+      const snap = await cloud.fs.getDoc(docRef(k));
       const local = _getItem.call(localStorage, k);
       if (snap.exists()) {
         const v = snap.data().value;
@@ -867,35 +876,25 @@ textarea { resize: vertical; min-height: 80px; }
     if (changed) location.reload();
   }
 
-  window.cloudSignIn = function() {
-    cloud.authMod.signInWithRedirect(cloud.auth, new cloud.authMod.GoogleAuthProvider())
-      .catch(e => alert('ההתחברות נכשלה: ' + e.code + ' ' + e.message));
+  window.copySyncLink = function() {
+    const url = location.origin + location.pathname + '?k=' + syncKey;
+    navigator.clipboard.writeText(url)
+      .then(() => alert('הקישור הועתק. פתח אותו בטלפון'))
+      .catch(() => prompt('העתק את הקישור:', url));
   };
 
-  async function initCloud() {
+  async function init() {
     try {
       const appMod = await import(FB + 'firebase-app.js');
-      cloud.authMod = await import(FB + 'firebase-auth.js');
       cloud.fs = await import(FB + 'firebase-firestore.js');
       const app = appMod.initializeApp(FB_CONFIG);
-      cloud.auth = cloud.authMod.getAuth(app);
       cloud.db = cloud.fs.getFirestore(app);
-      cloud.authMod.getRedirectResult(cloud.auth).catch(e => alert('ההתחברות נכשלה: ' + e.code + ' ' + e.message));
-      cloud.authMod.onAuthStateChanged(cloud.auth, async user => {
-        if (!user) {
-          cloud.user = null;
-          document.getElementById('signin-overlay').style.display = 'flex';
-          return;
-        }
-        cloud.user = user;
-        document.getElementById('signin-overlay').style.display = 'none';
-        await cloudPull();
-      });
+      await cloudPull();
     } catch (e) {
       alert('שגיאה בחיבור לענן: ' + e.message);
     }
   }
-  initCloud();
+  init();
 })();
 </script>
 <script>
